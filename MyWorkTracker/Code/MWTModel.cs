@@ -1,12 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 
 namespace MyWorkTracker.Code
 {
-    public class MWTModel
+    public class MWTModel : INotifyPropertyChanged
     {
         public const string DatabaseFile = @"D:\Development\Repos\MyWorkTracker\MyWorkTracker\Data\MyWorkTracker.db";
+        //public const string DatabaseFile = @"|DataDirectory|\Data\MyWorkTracker.db";
         public delegate void AppEventHandler(object obj, AppEventArgs e);
         public event AppEventHandler appEvent;
 
@@ -29,6 +31,21 @@ namespace MyWorkTracker.Code
         /// The selected work item.
         /// </summary>
         private WorkItem _selectedWorkItem = null;
+        public WorkItem SelectedWorkItem
+        {
+            get { return _selectedWorkItem; }
+            set { _selectedWorkItem = value; OnPropertyChanged(""); }
+        }
+
+        public bool IsWorkItemSelected
+        {
+            get {
+                bool rValue = false;
+                if (_selectedWorkItem != null)
+                    rValue = true;
+                return rValue;
+            }
+        }
 
         /// <summary>
         /// Keeps track of the previously selected work item.
@@ -41,6 +58,21 @@ namespace MyWorkTracker.Code
         /// the current in-creation WorkItem.
         /// </summary>
         private ApplicationMode _appMode = ApplicationMode.EDIT_WORK_ITEM;
+        /// <summary>
+        /// Returns whether or not the application is currently in 'add' mode.
+        /// </summary>
+        /// <returns></returns>
+        public bool IsApplicationInAddMode
+        {
+            get
+            {
+                bool rValue = false;
+                if (_appMode == ApplicationMode.ADD_WORK_ITEM)
+                    rValue = true;
+                return rValue;
+            }
+        }
+
 
         /// <summary>
         /// This flag is needed to determine if changes to controls are due to the data-binding, or if by user entry.
@@ -48,9 +80,20 @@ namespace MyWorkTracker.Code
         /// </summary>
         public bool IsBindingLoading { get; set; }
 
+
+
         public MWTModel()
         {
 
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+        protected void OnPropertyChanged(string propertyName)
+        {
+            if (this.PropertyChanged != null)
+            {
+                this.PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
+            }
         }
 
         /// <summary>
@@ -127,12 +170,16 @@ namespace MyWorkTracker.Code
             {
                 _previouslySelectedWorkItem = _selectedWorkItem;
             }
-            _selectedWorkItem = wi;
+            SelectedWorkItem = wi;
 
             var eventArgs = new AppEventArgs(AppAction.CREATE_NEW_WORK_ITEM, wi);
             appEvent?.Invoke(this, eventArgs);
         }
 
+        /// <summary>
+        /// Fire a notification that the due date has changed for a WorkItem.
+        /// </summary>
+        /// <param name="wi"></param>
         public void FireDueDateChanged(WorkItem wi)
         {
             var eventArgs = new AppEventArgs(AppAction.DUE_DATE_CHANGED, wi);
@@ -153,23 +200,9 @@ namespace MyWorkTracker.Code
                 _previouslySelectedWorkItem = _selectedWorkItem;
             }
 
-            _selectedWorkItem = wt;
+            SelectedWorkItem = wt;
             var eventArgs = new AppEventArgs(AppAction.SELECT_WORK_ITEM, wt);
             appEvent?.Invoke(this, eventArgs);
-        }
-
-        public WorkItem GetSelectedWorkItem()
-        {
-            return _selectedWorkItem;
-        }
-
-        /// <summary>
-        /// Returns whether or not the application is currently in 'add' mode.
-        /// </summary>
-        /// <returns></returns>
-        public bool IsApplicationInAddMode()
-        {
-            return (_appMode == ApplicationMode.ADD_WORK_ITEM) ? true : false;
         }
 
         /// <summary>
@@ -179,22 +212,15 @@ namespace MyWorkTracker.Code
         public void SetApplicationMode(ApplicationMode mode)
         {
             _appMode = mode;
+            OnPropertyChanged("");
             var eventArgs = new AppEventArgs(AppAction.SET_APPLICATION_MODE, null);
             appEvent?.Invoke(this, eventArgs);
         }
 
         /// <summary>
-        /// Checks to see if a WorkItem is currently selected.
+        /// Return the mode that the application is currently in.
         /// </summary>
         /// <returns></returns>
-        public bool IsWorkItemSelected()
-        {
-            if (_selectedWorkItem == null)
-                return false;
-            else
-                return true;
-        }
-
         public ApplicationMode GetApplicationMode()
         {
             return _appMode;

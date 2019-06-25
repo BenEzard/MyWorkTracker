@@ -88,6 +88,7 @@
     <Compile Include="Code\AppAction.cs" />
     <Compile Include="Code\AppEventArgs.cs" />
     <Compile Include="Code\ApplicationMode.cs" />
+    <Compile Include="Code\DateMethods.cs" />
     <Compile Include="Code\DBInstaller.cs" />
     <Compile Include="Code\MWTController.cs" />
     <Compile Include="Code\MWTModel.cs" />
@@ -137,14 +138,30 @@
     </Resource>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Data\SQL\10 DueDate.sql" />
-    <Content Include="Data\SQL\20 Setting.sql" />
-    <Content Include="Data\SQL\05 WorkItem.sql" />
-    <Content Include="Data\SQL\25 Status.sql" />
-    <Content Include="Data\SQL\30 WorkItemStatus.sql" />
-    <Content Include="Data\SQL\40 vwMostRecentDueDate.sql" />
-    <Content Include="Data\SQL\45 vwMostRecentWorkItemStatus.sql" />
-    <Content Include="Data\SQL\55 vwWorkItem.sql" />
+    <Content Include="Data\SQL\10 DueDate.sql">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Data\SQL\20 Setting.sql">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Data\SQL\05 WorkItem.sql">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Data\SQL\25 Status.sql">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Data\SQL\30 WorkItemStatus.sql">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Data\SQL\40 vwMostRecentDueDate.sql">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Data\SQL\45 vwMostRecentWorkItemStatus.sql">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Data\SQL\55 vwWorkItem.sql">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Resource Include="Images\folder-blue.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Resource>

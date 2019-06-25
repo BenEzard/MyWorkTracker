@@ -6,13 +6,14 @@
         xmlns:local="clr-namespace:MyWorkTracker"
         mc:Ignorable="d"
         Title="MyWorkTracker"
-            Height="750" Width="1200" Left="-1400" Top="100" >
+        
+            Height="750" Width="750" Left="-1400" Top="100" Closing="Window_Closing" >
     
     <DockPanel>
         <ToolBarTray DockPanel.Dock="Top" Margin="0,0,0.333,0">
             <ToolBar Band="1" BandIndex="1">
-                <Button Name="NewWorkItemButton" 
-                        Content="New Work Item" VerticalAlignment="Top" Click="CreateNewWorkItemSelected" />
+                <Button Name="NewWorkItemButton" Click="CreateNewWorkItemSelected" 
+                        Content="New Work Item" VerticalAlignment="Top" />
             </ToolBar>
         </ToolBarTray>
         
@@ -24,8 +25,9 @@
 
             <TabControl>
                 <TabItem Header="Work Items">
-                    <ListBox Name="GraphicalTaskView" Grid.Row="0"
-                             SelectionMode="Single" ScrollViewer.HorizontalScrollBarVisibility="Disabled" SelectionChanged="ActiveWorkItemSelectionChanged">
+                    <ListBox Name="GraphicalTaskView"
+                              IsEnabled="{Binding !IsApplicationInAddMode}" SelectionChanged="ActiveWorkItemSelectionChanged"
+                              Grid.Row="0" SelectionMode="Single" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                         <ListBox.ItemTemplate>
                             <DataTemplate>
                                 <Grid>
@@ -71,7 +73,6 @@
             <Grid Grid.Row="1">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition />
-                    <ColumnDefinition />
                 </Grid.ColumnDefinitions>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
@@ -80,17 +81,19 @@
                 </Grid.RowDefinitions>
         
                 <!-- Top of the bottom half of the screen, will display the currently selected Work item. -->
-                <StackPanel Grid.Column="0" Grid.Row="0" Grid.ColumnSpan="2" 
+                <StackPanel Grid.Column="0" Grid.Row="0"
                             Orientation="Horizontal" VerticalAlignment="Center" Background="LightYellow" >
                     <TextBox Name="SelectedTaskTitleField" 
+                             IsEnabled="{Binding IsWorkItemSelected}" Text="{Binding SelectedWorkItem.Title}" GotFocus="ControlGainsFocus" LostFocus="ControlLosesFocus" 
+                             TextChanged="WorkItemChanged"
                              FontSize="16" FontWeight="Bold" Width="390" Margin="5" Background="LightYellow" BorderThickness="0" VerticalAlignment="Center"
-                                 Text="{Binding Title}" GotFocus="ControlGainsFocus" LostFocus="ControlLosesFocus" TextChanged="WorkItemChanged" />
+                                  />
                     <TextBlock Padding="5,5,5,5" VerticalAlignment="Center">Due Date:</TextBlock>
-                    <Button Name="DueDateButton" 
-                            Content="{Binding DueDate, StringFormat=\{0:ddd dd/MM HH:mm\}}"
-                            Padding="5" Margin="5" Click="DueDateButtonSelected" />
-                    <TextBox Name="DueInDaysTextField" IsReadOnly="True"
-                             Padding="5,5,5,5" VerticalAlignment="Center" Background="LightYellow" Width="200" BorderThickness="0">(in x days)</TextBox>
+                    <Button Name="DueDateButton" Click="DueDateButton_Click" 
+                            Content="{Binding SelectedWorkItem.DueDate, StringFormat=\{0:ddd dd/MM HH:mm\}}" IsEnabled="{Binding IsWorkItemSelected}"
+                            Padding="5" Margin="5" />
+                    <TextBlock Name="DueInDaysTextField" 
+                             Padding="5,5,5,5" VerticalAlignment="Center" Background="LightYellow" Width="200" />
                 </StackPanel>
 
                 <TabControl Grid.Column="0" Grid.Row="1" TabStripPlacement="Left">
@@ -102,7 +105,7 @@
                         <DockPanel>
                             <TextBlock DockPanel.Dock="Top" FontSize="14" FontWeight="Normal" Foreground="Black">Task Description</TextBlock>
                             <TextBox Name="TaskDescriptionField" 
-                                     Text="{Binding TaskDescription, Mode=TwoWay}"
+                                     Text="{Binding SelectedWorkItem.TaskDescription, Mode=TwoWay}" IsEnabled="{Binding IsWorkItemSelected}" 
                                      GotFocus="ControlGainsFocus" LostFocus="ControlLosesFocus"
                                      Background="LightYellow" MinLines="5" TextWrapping="Wrap" 
                                      AcceptsReturn="True" AcceptsTab="True" 
@@ -116,22 +119,22 @@
                 <StackPanel Grid.Column="0" Grid.Row="2" Orientation="Horizontal">
                     <TextBlock Text="Progress:" Margin="5"/>
                     <Slider x:Name="WorkItemProgressSlider" 
-                            Value="{Binding Completed, Mode=TwoWay}" 
+                            Value="{Binding SelectedWorkItem.Completed}" IsEnabled="{Binding IsWorkItemSelected}" ValueChanged="WorkItemChanged" 
                                 TickFrequency="10" TickPlacement="BottomRight" Margin="5" 
                                 IsSnapToTickEnabled="False" IsMoveToPointEnabled="True"
-                                Minimum="0" Maximum="100" Width="150" ValueChanged="WorkItemChanged" />
+                                Minimum="0" Maximum="100" Width="120" />
                     <TextBlock Padding="5,5,5,5"><Run Text="Status:"/></TextBlock>
                     <ComboBox Name="WorkItemStatus"
-                              IsEditable="False"
+                              IsEditable="False" IsEnabled="{Binding IsWorkItemSelected}" 
                               Margin="5" MinWidth="80" SelectionChanged="WorkItemStatusChanged" />
                 </StackPanel>
                 <StackPanel VerticalAlignment="Center" Orientation="Horizontal" HorizontalAlignment="Right"
-                    Grid.Row="2" Grid.Column="1" >
-                    <Button Content="DebugOut" Margin="5" Padding="5" Click="DebugOut" />
+                    Grid.Row="2" Grid.Column="0" >
                     <Button Name="CancelButton" 
+                            IsEnabled="{Binding IsApplicationInAddMode}" Click="CancelButton_Click"
                             Content="Cancel" Margin="5" Padding="5" />
                     <Button Name="SaveButton" 
-                            Click="SaveButtonPressed"
+                            Click="SaveButton_Click" IsEnabled="{Binding IsApplicationInAddMode}"
                             Content="Save" Margin="5" Padding="5" />
                 </StackPanel>
 

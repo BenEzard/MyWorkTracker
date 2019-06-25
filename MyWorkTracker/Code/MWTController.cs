@@ -6,7 +6,7 @@ namespace MyWorkTracker.Code
 {
     public class MWTController
     {
-        private const string dbConnectionString = "data source=" + MWTModel.DatabaseFile;
+        private string dbConnectionString = "data source=" + MWTModel.DatabaseFile;
 
         MWTModel _model = null;
 
@@ -14,7 +14,11 @@ namespace MyWorkTracker.Code
         {
             _model = model;
 
-            //new DBInstaller(MWTModel.DatabaseFile, dbConnectionString);
+            /*string executable = System.Reflection.Assembly.GetExecutingAssembly().Location;
+            string path = (System.IO.Path.GetDirectoryName(executable));
+            AppDomain.CurrentDomain.SetData("DataDirectory", path);*/
+
+            new DBInstaller(MWTModel.DatabaseFile, dbConnectionString);
 
             LoadApplicationSettingsFromDB(true);
             LoadWorkItemStatusesFromDB();
@@ -41,6 +45,9 @@ namespace MyWorkTracker.Code
                 0);
             wi.DueDate = dueDate;
 
+            // TODO replace
+            wi.Status = "Active";
+
             _model.FireCreateNewWorkItem(wi);
         }
 
@@ -66,6 +73,9 @@ namespace MyWorkTracker.Code
             return rValue;
         }
 
+        /// <summary>
+        /// Load the WorkItems from the database.
+        /// </summary>
         private void LoadWorkItemsFromDB()
         {
             using (var connection = new SQLiteConnection(dbConnectionString))
@@ -97,7 +107,7 @@ namespace MyWorkTracker.Code
         }
 
         /// <summary>
-        /// 
+        /// Load WorkItem Statuses from the database.
         /// </summary>
         private void LoadWorkItemStatusesFromDB()
         {
@@ -143,7 +153,7 @@ namespace MyWorkTracker.Code
                         "VALUES (@workItemID, @statusID, @creation)";
                     cmd.Parameters.AddWithValue("@workItemID", wi.Meta.WorkItem_ID);
                     cmd.Parameters.AddWithValue("@statusID", wis.WorkItemStatusID);
-                    cmd.Parameters.AddWithValue("@creation", FormatSQLDateTime(DateTime.Now));
+                    cmd.Parameters.AddWithValue("@creation", DateMethods.FormatSQLDateTime(DateTime.Now));
                     cmd.ExecuteNonQuery();
 
                     // Get the identity value
@@ -188,7 +198,6 @@ namespace MyWorkTracker.Code
                 }
             }
         }
-
 
         /// <summary>
         /// Inserts a WorkTask into the database, returning the rowID of the inserted record.
@@ -280,9 +289,9 @@ namespace MyWorkTracker.Code
                     cmd.CommandText = "INSERT INTO DueDate (WorkItem_ID, DueDateTime, ChangeReason, CreationDateTime)" +
                         "VALUES (@WorkItemID, @NewDueDate, @ChangeReason, @CreationDateTime)";
                     cmd.Parameters.AddWithValue("@WorkItemID", workItem.Meta.WorkItem_ID);
-                    cmd.Parameters.AddWithValue("@NewDueDate", FormatSQLDateTime(newDueDate));
+                    cmd.Parameters.AddWithValue("@NewDueDate", DateMethods.FormatSQLDateTime(newDueDate));
                     cmd.Parameters.AddWithValue("@ChangeReason", changeReason);
-                    cmd.Parameters.AddWithValue("@CreationDateTime", FormatSQLDateTime(DateTime.Now));
+                    cmd.Parameters.AddWithValue("@CreationDateTime", DateMethods.FormatSQLDateTime(DateTime.Now));
                     cmd.ExecuteNonQuery();
 
                     // Get the identity value
@@ -317,7 +326,7 @@ namespace MyWorkTracker.Code
                         "WHERE DueDate_ID = @DueDateID";
                     cmd.Parameters.AddWithValue("@DueDate", newDueDate);
                     cmd.Parameters.AddWithValue("@ChangeReason", changeReason);
-                    cmd.Parameters.AddWithValue("@CreateDateTime", FormatSQLDateTime(DateTime.Now));
+                    cmd.Parameters.AddWithValue("@CreateDateTime", DateMethods.FormatSQLDateTime(DateTime.Now));
                     cmd.Parameters.AddWithValue("@DueDateID", workItem.Meta.DueDate_ID);
                     cmd.ExecuteNonQuery();
                 }
@@ -328,99 +337,6 @@ namespace MyWorkTracker.Code
             _model.FireDueDateChanged(workItem);
 
             return workItem.Meta.DueDate_ID;
-        }
-
-        /// <summary>
-        /// 
-        /// TODO: this should be replaced by something else pre-existing 
-        /// </summary>
-        /// <param name="dt"></param>
-        /// <returns></returns>
-        public static string FormatSQLDateTime(DateTime dt)
-        {
-            string rValue = $"{dt.Year}-";
-            if (dt.Month < 10)
-                rValue += "0";
-            rValue += $"{dt.Month}-";
-            if (dt.Day < 10)
-                rValue += "0";
-            rValue += $"{dt.Day} ";
-            if (dt.Hour < 10)
-                rValue += "0";
-            rValue += $"{dt.Hour}:";
-            if (dt.Minute < 10)
-                rValue += "0";
-            rValue += $"{dt.Minute}:";
-            if (dt.Second < 10)
-                rValue += "0";
-            rValue += $"{dt.Second}.000";
-
-            return rValue;
-        }
-
-        public static string GenerateDateDifferenceLabel(DateTime date1, DateTime date2, bool shortVersion)
-        {
-            string rValue = "";
-            bool needComma = false;
-            bool valueOutputted = false;    // This is set to true if shortVersion==true and some time-related value has been added to
-                                            // the string
-
-            TimeSpan? diffBetweenNowAndDue = date2 - date1;
-
-            if (diffBetweenNowAndDue.HasValue)
-            {
-                // Check to see if it's future-dated or overdue
-                if (diffBetweenNowAndDue.Value.TotalSeconds == 0)
-                {
-                    rValue = "(Due now)";
-                    return rValue;
-                }
-                else if (diffBetweenNowAndDue.Value.TotalSeconds > 0)
-                    rValue = "(Due in ";
-                else
-                {
-                    rValue = "(Overdue by ";
-                    diffBetweenNowAndDue = diffBetweenNowAndDue.Value.Negate();
-                }
-
-                if (diffBetweenNowAndDue.Value.Days != 0)
-                {
-                    if (shortVersion)
-                        valueOutputted = true;
-
-                    rValue += $"{diffBetweenNowAndDue.Value.Days} day";
-                    needComma = true;
-                    if (diffBetweenNowAndDue.Value.Days > 1)
-                        rValue += "s";
-                }
-
-                if ((diffBetweenNowAndDue.Value.Hours != 0) && (valueOutputted == false))
-                {
-                    if (shortVersion)
-                        valueOutputted = true;
-
-                    if (needComma)
-                        rValue += ", ";
-                    rValue += $"{diffBetweenNowAndDue.Value.Hours} hour";
-                    if (diffBetweenNowAndDue.Value.Hours > 1)
-                        rValue += "s";
-                }
-
-                if ((diffBetweenNowAndDue.Value.Minutes != 0) && (valueOutputted == false))
-                {
-                    if (shortVersion)
-                        valueOutputted = true;
-
-                    if (needComma)
-                        rValue += ", ";
-                    rValue += $"{diffBetweenNowAndDue.Value.Minutes} minute";
-                    if (diffBetweenNowAndDue.Value.Minutes > 1)
-                        rValue += "s";
-                }
-            }
-            rValue += ")";
-
-            return rValue;
         }
 
     }

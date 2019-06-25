@@ -14,6 +14,7 @@ namespace MyWorkTracker.Data
         /// Their names should confer the run-order.
         /// </summary>
         public const string SQLFileLocation = @"D:\Development\Repos\MyWorkTracker\MyWorkTracker\Data\SQL";
+        //public const string SQLFileLocation = @"Data\SQL";
 
         public DBInstaller(string dbFilePath, string dbConnectionString)
         {

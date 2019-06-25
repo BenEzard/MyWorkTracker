@@ -34,13 +34,7 @@ namespace MyWorkTracker
             // Set the application name and version.
             this.Title = $"{_model.GetAppSetting(SettingName.APPLICATION_NAME)} [v{_model.GetAppSetting(SettingName.APPLICATION_VERSION)}]";
 
-            // TODO: Temp. Create a dummy record.
-/*            var wi = new WorkItem("A test run", "This is a sample test", "Active", 50, DateTime.Now, DateTime.Now);
-            _model.AddWorkItem(wi, true, true);
-            _model.SetSelectedWorkItem(wi);
-            DataContext = _model.GetSelectedWorkItem();*/
-
-            SaveButton.IsEnabled = true;
+            DataContext = _model;
         }
 
         /// <summary>
@@ -64,32 +58,25 @@ namespace MyWorkTracker
         {
             if (args.Action == AppAction.CREATE_NEW_WORK_ITEM)
             {
-                Console.WriteLine("*** A work item has been created");
-                DataContext = args.CurrentSelection;
+                WorkItemStatus.SelectedItem = _controller.GetWorkItemStatus(_model.SelectedWorkItem.Status);
                 _model.IsBindingLoading = false;
                 SelectedTaskTitleField.Focus();
 
                 _model.SetApplicationMode(ApplicationMode.ADD_WORK_ITEM);
-                NewWorkItemButton.IsEnabled = true;
             }
 
             else if (args.Action == AppAction.SELECT_WORK_ITEM)
             {
-                Console.WriteLine($"*** A work item has been selected: {args.CurrentSelection.Title}");
-
                 // Set to the Status of the selected WorkItem
                 WorkItemStatus.SelectedItem = _controller.GetWorkItemStatus(args.CurrentSelection.Status);
-
-                DataContext = args.CurrentSelection;
+                DueInDaysTextField.Text = DateMethods.GenerateDateDifferenceLabel(DateTime.Now, _model.SelectedWorkItem.DueDate, true);
                 _model.IsBindingLoading = false;
-
             }
 
             else if (args.Action == AppAction.WORK_ITEM_ADDED)
             {
                 SaveButton.Background = Brushes.SteelBlue;
                 SaveButton.Content = "Save";
-                SaveButton.IsEnabled = false;
             }
 
             if (args.Action == AppAction.SET_APPLICATION_MODE)
@@ -110,7 +97,6 @@ namespace MyWorkTracker
                 {
                     // Make the 'New Work Item' button available.
                     NewWorkItemButton.IsEnabled = true;
-                    SaveButton.IsEnabled = true;
                     GraphicalTaskView.Background = Brushes.White;
                     SaveButton.Content = "Save";
                 }
@@ -127,13 +113,6 @@ namespace MyWorkTracker
         private void CreateNewWorkItemSelected(object sender, RoutedEventArgs e)
         {
             _controller.CreateNewWorkItem();
-        }
-
-        private void DebugOut(object sender, RoutedEventArgs e)
-        {
-            var wi = _model.GetSelectedWorkItem();
-            Console.WriteLine($"Title={wi.Title}");
-            Console.WriteLine($"count of work items {_model.GetWorkItems().Count}");
         }
 
         /// <summary>
@@ -164,14 +143,14 @@ namespace MyWorkTracker
         }
 
         /// <summary>
-        /// When the Save button is pressed, then either the Work Item needs to be INSERTED (if the application is in ADD_WORK_ITEM),
-        /// or UPDATED if the WorkItem already exists.
+        /// This button is only enabled when the application is in add-mode, which means it's part way through adding a WorkItem.
+        /// All other saving will happen passively (when the user changes WorkItem selection or closes the form.
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void SaveButtonPressed(object sender, RoutedEventArgs e)
+        private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
-            WorkItem selectedWorkItem = _model.GetSelectedWorkItem();
+            WorkItem selectedWorkItem = _model.SelectedWorkItem;
 
             // If the application is in 'add mode' then we want to insert a record.
             if (_model.GetApplicationMode() == ApplicationMode.ADD_WORK_ITEM)
@@ -180,7 +159,17 @@ namespace MyWorkTracker
                 _model.AddWorkItem(selectedWorkItem, true, true);
                 _model.SetApplicationMode(ApplicationMode.EDIT_WORK_ITEM);
             }
-            else if (_model.GetApplicationMode() == ApplicationMode.EDIT_WORK_ITEM)
+        }
+
+        /// <summary>
+        /// Checks to see what aspects of a WorkItem might need updating and updates them accordingly to the database.
+        /// </summary>
+        private void UpdateWorkItemDBAsRequired()
+        {
+            WorkItem selectedWorkItem = _model.SelectedWorkItem;
+
+            // Ensure that a WorkItem has been selected.
+            if ((selectedWorkItem != null) && (_model.GetApplicationMode() == ApplicationMode.EDIT_WORK_ITEM))
             {
                 if (selectedWorkItem.Meta.WorkItemDBNeedsUpdate)
                 {
@@ -196,14 +185,14 @@ namespace MyWorkTracker
 
         private void ActiveWorkItemSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (_model.IsApplicationInAddMode())
+            if (_model.IsApplicationInAddMode)
             {
-                GraphicalTaskView.IsEnabled = false;
+                SelectedTaskTitleField.Focus();
             }
             // If the application is in 'add mode' (ADD_WORK_ITEM) then don't allow any selections.
             else
             {
-                GraphicalTaskView.IsEnabled = true;
+                UpdateWorkItemDBAsRequired();
                 GraphicalTaskView.Background = Brushes.White;
                 WorkItem wi = (WorkItem)(sender as ListBox).SelectedItem;
                 _model.SetSelectedWorkItem(wi);
@@ -219,26 +208,93 @@ namespace MyWorkTracker
         /// <param name="e"></param>
         private void WorkItemChanged(object sender, TextChangedEventArgs e)
         {
-            _model.GetSelectedWorkItem().Meta.WorkItemDBNeedsUpdate = true;
+            if (_model.SelectedWorkItem != null)
+                _model.SelectedWorkItem.Meta.WorkItemDBNeedsUpdate = true;
         }
 
         private void WorkItemChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
-            _model.GetSelectedWorkItem().Meta.WorkItemDBNeedsUpdate = true;
+            if (_model.SelectedWorkItem != null)
+                _model.SelectedWorkItem.Meta.WorkItemDBNeedsUpdate = true;
         }
 
         private void WorkItemStatusChanged(object sender, SelectionChangedEventArgs e)
         {
-            WorkItemStatus wis = (WorkItemStatus)WorkItemStatus.SelectedItem;
-            _model.GetSelectedWorkItem().Status = wis.Status;
-            _model.GetSelectedWorkItem().Meta.WorkItemStatusNeedsUpdate = true;
+            if (_model.SelectedWorkItem != null)
+            {
+                WorkItemStatus wis = (WorkItemStatus)WorkItemStatus.SelectedItem;
+                _model.SelectedWorkItem.Status = wis.Status;
+                _model.SelectedWorkItem.Meta.WorkItemStatusNeedsUpdate = true;
+            }
         }
 
-        private void DueDateButtonSelected(object sender, RoutedEventArgs e)
+        /// <summary>
+        /// Select a new DueDate for the WorkItem.
+        /// If the DueDate (from database) has been set within x mins of now, UPDATE the record instead of INSERTING it.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void DueDateButton_Click(object sender, RoutedEventArgs e)
         {
-            var ddw = new DueDateWindow(_controller);
-            ddw.Owner = this;
-            ddw.Show();
+            if (_model.SelectedWorkItem != null)
+            {
+                DateTime currentDueDate = _model.SelectedWorkItem.DueDate;
+                var ddw = new DueDateWindow(currentDueDate);
+                ddw.Owner = this;
+                ddw.ShowDialog();
+
+                if (ddw.WasWindowSubmitted)
+                {
+                    if (ddw.NewDateTime.Equals(currentDueDate))
+                    {
+                        // Do nothing
+                    }
+                    else
+                    {
+                        // If the DueDate (from database) has been set within x mins of now, UPDATE the record instead of INSERTING it.
+                        int minutesSinceLastSet = DateTime.Now.Subtract(_model.SelectedWorkItem.Meta.DueDateUpdateDateTime).Minutes;
+                        if (minutesSinceLastSet < Convert.ToInt32(_controller.GetMWTModel().GetAppSetting(SettingName.DUE_DATE_SET_WINDOW_MINUTES)))
+                        {
+                            // Update
+                            _controller.UpdateDBDueDate(_model.SelectedWorkItem, ddw.NewDateTime, ddw.ChangeReason);
+                        }
+                        else
+                        {
+                            // Insert
+                            _controller.InsertDBDueDate(_model.SelectedWorkItem, ddw.NewDateTime, ddw.ChangeReason);
+                        }
+
+                        // Update the update/record change time.
+                        _model.SelectedWorkItem.DueDate = ddw.NewDateTime;
+                        _model.SelectedWorkItem.Meta.DueDateUpdateDateTime = DateTime.Now;
+
+                        // Refresh the time label
+                        DueInDaysTextField.Text = DateMethods.GenerateDateDifferenceLabel(DateTime.Now, _model.SelectedWorkItem.DueDate, true);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// When the window closes, make sure that a selected WorkItem is saved.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            if (_model.SelectedWorkItem != null)
+                UpdateWorkItemDBAsRequired();
+        }
+
+        /// <summary>
+        /// Cancel the creation of a new WorkItem.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void CancelButton_Click(object sender, RoutedEventArgs e)
+        {
+            _model.SelectedWorkItem = null;
+            _model.SetApplicationMode(ApplicationMode.EDIT_WORK_ITEM);
         }
     }
 }
