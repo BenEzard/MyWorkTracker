@@ -7,8 +7,7 @@ namespace MyWorkTracker.Code
 {
     public class MWTModel : INotifyPropertyChanged
     {
-        public const string DatabaseFile = @"D:\Development\Repos\MyWorkTracker\MyWorkTracker\Data\MyWorkTracker.db";
-        //public const string DatabaseFile = @"|DataDirectory|\Data\MyWorkTracker.db";
+        public const string DatabaseFile = @"\Data\MyWorkTracker.db";
         public delegate void AppEventHandler(object obj, AppEventArgs e);
         public event AppEventHandler appEvent;
 

@@ -14,11 +14,12 @@ namespace MyWorkTracker.Code
         {
             _model = model;
 
-            /*string executable = System.Reflection.Assembly.GetExecutingAssembly().Location;
+            string executable = System.Reflection.Assembly.GetExecutingAssembly().Location;
             string path = (System.IO.Path.GetDirectoryName(executable));
-            AppDomain.CurrentDomain.SetData("DataDirectory", path);*/
 
-            new DBInstaller(MWTModel.DatabaseFile, dbConnectionString);
+            dbConnectionString = dbConnectionString.Replace("=", "=" + path);
+
+            //new DBInstaller(path+MWTModel.DatabaseFile, dbConnectionString);
 
             LoadApplicationSettingsFromDB(true);
             LoadWorkItemStatusesFromDB();
