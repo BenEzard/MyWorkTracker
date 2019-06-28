@@ -7,7 +7,7 @@
         mc:Ignorable="d"
         Title="MyWorkTracker"
         
-            Height="750" Width="750" Left="-1400" Top="100" Closing="Window_Closing" >
+            Height="750" Width="750" Left="100" Top="0" Closing="Window_Closing" >
     
     <DockPanel>
         <ToolBarTray DockPanel.Dock="Top" Margin="0,0,0.333,0">
