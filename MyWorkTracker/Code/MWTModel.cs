@@ -191,7 +191,6 @@ namespace MyWorkTracker.Code
         /// <param name="wt"></param>
         public void SetSelectedWorkItem(WorkItem wt)
         {
-            Console.WriteLine($" A new work item has been selected: {wt.Title}");
             IsBindingLoading = true;
 
             if (_selectedWorkItem != null)

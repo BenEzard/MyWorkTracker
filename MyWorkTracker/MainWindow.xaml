@@ -104,12 +104,12 @@
                         </TabItem.Header>
                         <DockPanel>
                             <TextBlock DockPanel.Dock="Top" FontSize="14" FontWeight="Normal" Foreground="Black">Task Description</TextBlock>
-                            <TextBox Name="TaskDescriptionField" 
+                            <TextBox Name="TaskDescriptionField"  TextChanged="WorkItemChanged"
                                      Text="{Binding SelectedWorkItem.TaskDescription, Mode=TwoWay}" IsEnabled="{Binding IsWorkItemSelected}" 
                                      GotFocus="ControlGainsFocus" LostFocus="ControlLosesFocus"
                                      Background="LightYellow" MinLines="5" TextWrapping="Wrap" 
                                      AcceptsReturn="True" AcceptsTab="True" 
-                                     VerticalScrollBarVisibility="Auto" TextChanged="WorkItemChanged"
+                                     VerticalScrollBarVisibility="Auto"
                                      />
                         </DockPanel>
                     </TabItem>

@@ -209,7 +209,9 @@ namespace MyWorkTracker
         private void WorkItemChanged(object sender, TextChangedEventArgs e)
         {
             if (_model.SelectedWorkItem != null)
+            {
                 _model.SelectedWorkItem.Meta.WorkItemDBNeedsUpdate = true;
+            }
         }
 
         private void WorkItemChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
@@ -283,7 +285,15 @@ namespace MyWorkTracker
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             if (_model.SelectedWorkItem != null)
+            {
+                // Move the focus so that the underlying data is altered.
+                if (SelectedTaskTitleField.IsFocused)
+                    TaskDescriptionField.Focus();
+                else
+                    SelectedTaskTitleField.Focus();
+
                 UpdateWorkItemDBAsRequired();
+            }
         }
 
         /// <summary>
