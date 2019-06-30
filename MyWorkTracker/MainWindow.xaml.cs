@@ -1,5 +1,6 @@
 ﻿using MyWorkTracker.Code;
 using System;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -35,6 +36,11 @@ namespace MyWorkTracker
             this.Title = $"{_model.GetAppSetting(SettingName.APPLICATION_NAME)} [v{_model.GetAppSetting(SettingName.APPLICATION_VERSION)}]";
 
             DataContext = _model;
+        }
+
+        private void SelectedWorkItemPropertyChanged(string s)
+        {
+            Console.WriteLine(s);
         }
 
         /// <summary>
@@ -77,6 +83,32 @@ namespace MyWorkTracker
             {
                 SaveButton.Background = Brushes.SteelBlue;
                 SaveButton.Content = "Save";
+            }
+
+            else if (args.Action == AppAction.WORK_ITEM_STATUS_CHANGED)
+            {
+                Console.WriteLine("WORK_ITEM_STATUS_CHANGED select detected");
+                // Check to see if the Status has been set to a 'completed' type. If so, disable the progress bar.
+                bool isCompletedStatus = false;
+                foreach (WorkItemStatus wis in _controller.GetWorkItemStatuses(false))
+                {
+                    if (wis.Status.Equals(args.CurrentSelection.Status))
+                    {
+                        isCompletedStatus = true;
+                        break;
+                    }
+                }
+
+                if (isCompletedStatus)
+                {
+                    Console.WriteLine("Is completed");
+                    WorkItemProgressSlider.IsEnabled = false;
+                }
+                else
+                {
+                    Console.WriteLine("Is not completed");
+                    WorkItemProgressSlider.IsEnabled = true;
+                }
             }
 
             if (args.Action == AppAction.SET_APPLICATION_MODE)
@@ -214,6 +246,12 @@ namespace MyWorkTracker
 
         private void WorkItemChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
+            if (e.NewValue == 100)
+            {
+                var s = _controller.GetWorkItemStatuses(false, true).ToArray();
+                WorkItemStatus.SelectedValue = _controller.GetWorkItemStatuses(false, true).ToArray()[0];
+            }
+
             if (_model.SelectedWorkItem != null)
                 _model.SelectedWorkItem.Meta.WorkItemDBNeedsUpdate = true;
         }
@@ -223,8 +261,7 @@ namespace MyWorkTracker
             if (_model.SelectedWorkItem != null)
             {
                 WorkItemStatus wis = (WorkItemStatus)WorkItemStatus.SelectedItem;
-                _model.SelectedWorkItem.Status = wis.Status;
-                _model.SelectedWorkItem.Meta.WorkItemStatusNeedsUpdate = true;
+                _controller.SetWorkItemStatus(_model.SelectedWorkItem, wis);
             }
         }
 

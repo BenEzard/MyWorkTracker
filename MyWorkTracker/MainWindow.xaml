@@ -100,7 +100,7 @@
                     <TabItem Name="TabTaskDescription" 
                              ToolTip="Task Description" Foreground="White">
                         <TabItem.Header>
-                            <Image Width="24" Source="Images\folder-green.png"></Image>
+                            <Image Width="32" Source="Images\folder-green.png"></Image>
                         </TabItem.Header>
                         <DockPanel>
                             <TextBlock DockPanel.Dock="Top" FontSize="14" FontWeight="Normal" Foreground="Black">Task Description</TextBlock>
@@ -124,9 +124,9 @@
                                 IsSnapToTickEnabled="False" IsMoveToPointEnabled="True"
                                 Minimum="0" Maximum="100" Width="120" />
                     <TextBlock Padding="5,5,5,5"><Run Text="Status:"/></TextBlock>
-                    <ComboBox Name="WorkItemStatus"
+                    <ComboBox Name="WorkItemStatus" SelectionChanged="WorkItemStatusChanged"
                               IsEditable="False" IsEnabled="{Binding IsWorkItemSelected}" 
-                              Margin="5" MinWidth="80" SelectionChanged="WorkItemStatusChanged" />
+                              Margin="5" MinWidth="80" />
                 </StackPanel>
                 <StackPanel VerticalAlignment="Center" Orientation="Horizontal" HorizontalAlignment="Right"
                     Grid.Row="2" Grid.Column="0" >

@@ -7,5 +7,6 @@
         SET_APPLICATION_MODE,
         WORK_ITEM_ADDED,
         DUE_DATE_CHANGED,
+        WORK_ITEM_STATUS_CHANGED,
     }
 }

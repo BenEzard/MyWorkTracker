@@ -10,6 +10,7 @@ namespace MyWorkTracker.Code
         public const string DatabaseFile = @"\Data\MyWorkTracker.db";
         public delegate void AppEventHandler(object obj, AppEventArgs e);
         public event AppEventHandler appEvent;
+        public event PropertyChangedEventHandler PropertyChanged;
 
         /// <summary>
         /// This collection is the key data of the application; a list of WorkItems.
@@ -45,6 +46,36 @@ namespace MyWorkTracker.Code
                 return rValue;
             }
         }
+
+   /*     public bool ShouldProgressBarBeEnabled
+        {
+            get {
+                bool rValue = false;
+
+                if ((IsWorkItemSelected) && (GetWorkItemStatus(_selectedWorkItem.Status).IsConsideredActive))
+                {
+                    rValue = true;
+                }
+
+                return rValue;
+            }
+        }
+
+        public WorkItemStatus GetWorkItemStatus(string status)
+        {
+            WorkItemStatus rValue = null;
+
+            foreach (WorkItemStatus s in _statuses)
+            {
+                if (s.Status.Equals(status))
+                {
+                    rValue = s;
+                    break;
+                }
+            }
+
+            return rValue;
+        }*/
 
         /// <summary>
         /// Keeps track of the previously selected work item.
@@ -86,7 +117,6 @@ namespace MyWorkTracker.Code
 
         }
 
-        public event PropertyChangedEventHandler PropertyChanged;
         protected void OnPropertyChanged(string propertyName)
         {
             if (this.PropertyChanged != null)
@@ -138,7 +168,7 @@ namespace MyWorkTracker.Code
         /// Get the list of potential WorkItem Statuses.
         /// </summary>
         /// <returns></returns>
-        public List<WorkItemStatus> GetWorkItemStatuses()
+        public IEnumerable<WorkItemStatus> GetWorkItemStatuses()
         {
             return _statuses;
         }
@@ -172,6 +202,16 @@ namespace MyWorkTracker.Code
             SelectedWorkItem = wi;
 
             var eventArgs = new AppEventArgs(AppAction.CREATE_NEW_WORK_ITEM, wi);
+            appEvent?.Invoke(this, eventArgs);
+        }
+
+        /// <summary>
+        /// Fire a notification that a Work Item Status has changed for a WorkItem.
+        /// </summary>
+        /// <param name="wi"></param>
+        public void FireWorkItemStatusChange(WorkItem wi, WorkItemStatus wis)
+        {
+            var eventArgs = new AppEventArgs(AppAction.WORK_ITEM_STATUS_CHANGED, wi);
             appEvent?.Invoke(this, eventArgs);
         }
 

@@ -1,6 +1,7 @@
-﻿using MyWorkTracker.Data;
-using System;
+﻿using System;
+using System.Collections.Generic;
 using System.Data.SQLite;
+using System.Linq;
 
 namespace MyWorkTracker.Code
 {
@@ -18,8 +19,6 @@ namespace MyWorkTracker.Code
             string path = (System.IO.Path.GetDirectoryName(executable));
 
             dbConnectionString = dbConnectionString.Replace("=", "=" + path);
-
-            //new DBInstaller(path+MWTModel.DatabaseFile, dbConnectionString);
 
             LoadApplicationSettingsFromDB(true);
             LoadWorkItemStatusesFromDB();
@@ -46,15 +45,48 @@ namespace MyWorkTracker.Code
                 0);
             wi.DueDate = dueDate;
 
-            // TODO replace
-            wi.Status = "Active";
+            // Get the default active Status (note due to DB constraints there can only be one).
+            wi.Status = GetWorkItemStatuses(true, true).ToArray()[0].Status;
 
             _model.FireCreateNewWorkItem(wi);
+        }
+
+        /// <summary>
+        /// Return WorkItemStatus(es) based on their IsConsideredActive or IsDefault value.
+        /// </summary>
+        /// <param name="isConsideredActive"></param>
+        /// <param name="isDefault"></param>
+        /// <returns></returns>
+        public IEnumerable<WorkItemStatus> GetWorkItemStatuses(bool? isConsideredActive = null, bool? isDefault = null)
+        {
+            IEnumerable<WorkItemStatus> rValue;
+
+            // Return based on isActive
+            if ((isConsideredActive.HasValue == true) && (isDefault.HasValue == false))
+                rValue = _model.GetWorkItemStatuses().Where(u => u.IsConsideredActive == isConsideredActive);
+            // Return based on IsDefault (2 return items possible)
+            else if ((isConsideredActive.HasValue == false) && (isDefault.HasValue == true))
+                rValue = _model.GetWorkItemStatuses().Where(u => u.IsDefault == isDefault);
+            // Return based on isActive and IsDefault
+            else if ((isConsideredActive.HasValue == true) && (isDefault.HasValue == true))
+                rValue = _model.GetWorkItemStatuses().Where(u => u.IsConsideredActive == isConsideredActive && u.IsDefault == isDefault);
+            // Return all
+            else
+                rValue = _model.GetWorkItemStatuses();
+
+            return rValue;
         }
 
         public MWTModel GetMWTModel()
         {
             return _model;
+        }
+
+        public void SetWorkItemStatus(WorkItem wi, WorkItemStatus wis)
+        {
+            wi.Status = wis.Status;
+            wi.Meta.WorkItemStatusNeedsUpdate = true;
+            _model.FireWorkItemStatusChange(wi, wis);
         }
 
         public WorkItemStatus GetWorkItemStatus(string status)
@@ -125,7 +157,12 @@ namespace MyWorkTracker.Code
                         {
                             int id = Convert.ToInt32(reader["Status_ID"]);
                             string status = (string)reader["StatusLabel"];
-                            _model.AddWorkItemStatus(new WorkItemStatus(id, status));
+                            WorkItemStatus wis = new WorkItemStatus(id, status);
+                            wis.IsConsideredActive = (bool)reader["IsConsideredActive"];
+                            wis.IsDefault = (bool)reader["IsDefault"];
+                            if (reader["DeletionDateTime"] != DBNull.Value)
+                                wis.DeletionDate = Convert.ToDateTime(reader["DeletionDateTime"].ToString());
+                            _model.AddWorkItemStatus(wis);
                         }
                     }
 
@@ -208,7 +245,6 @@ namespace MyWorkTracker.Code
         /// <returns></returns>
         public int InsertDBWorkItem(WorkItem wi)
         {
-            Console.WriteLine($"Trying to insert {wi.Title}");
             int workItemID = -1;
             using (var connection = new SQLiteConnection(dbConnectionString))
             {

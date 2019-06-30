@@ -89,7 +89,6 @@
     <Compile Include="Code\AppEventArgs.cs" />
     <Compile Include="Code\ApplicationMode.cs" />
     <Compile Include="Code\DateMethods.cs" />
-    <Compile Include="Code\DBInstaller.cs" />
     <Compile Include="Code\MWTController.cs" />
     <Compile Include="Code\MWTModel.cs" />
     <Compile Include="Code\SettingName.cs" />
@@ -131,37 +130,15 @@
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="Data\" />
+  </ItemGroup>
   <ItemGroup>
     <Resource Include="Images\folder-green.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Data\SQL\10 DueDate.sql">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Data\SQL\20 Setting.sql">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Data\SQL\05 WorkItem.sql">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Data\SQL\25 Status.sql">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Data\SQL\30 WorkItemStatus.sql">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Data\SQL\40 vwMostRecentDueDate.sql">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Data\SQL\45 vwMostRecentWorkItemStatus.sql">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Data\SQL\55 vwWorkItem.sql">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
     <Resource Include="Images\folder-blue.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>
