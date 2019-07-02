@@ -8,6 +8,13 @@ namespace MyWorkTracker.Code
 {
     public static class DateMethods
     {
+
+        public static DateTime GetNextWeekday(DateTime start, DayOfWeek day)
+        {
+            int daysToAdd = ((int)day - (int)start.DayOfWeek + 7) % 7;
+            return start.AddDays(daysToAdd);
+        }
+
         /// <summary>
         /// Outputs a date time in SQL format.
         /// TODO: this should be replaced by something else pre-existing 

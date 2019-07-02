@@ -63,6 +63,8 @@
     <Content Include="SQL\10 DueDate.sql">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <Content Include="SQL\15 Journal.sql" />
+    <Content Include="SQL\16 vwActiveJournal.sql" />
     <Content Include="SQL\20 Setting.sql">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>

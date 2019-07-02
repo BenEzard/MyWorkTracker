@@ -39,16 +39,31 @@ namespace MyWorkTracker.Code
             //   1. This will be the current datetime + the default amount
             DateTime dueDate = DateTime.Now.AddDays(Double.Parse(_model.GetAppSetting(SettingName.DEFAULT_WORKITEM_LENGTH_DAYS)));
             //   2. + end of the work day
-            dueDate = new DateTime(dueDate.Year, dueDate.Month, dueDate.Day, 
-                Int32.Parse(_model.GetAppSetting(SettingName.DEFAULT_WORKITEM_COB_HOURS)), 
-                Int32.Parse(_model.GetAppSetting(SettingName.DEFAULT_WORKITEM_COB_MINS)), 
+            dueDate = new DateTime(dueDate.Year, dueDate.Month, dueDate.Day,
+                int.Parse(_model.GetAppSetting(SettingName.DEFAULT_WORKITEM_COB_HOURS)),
+                int.Parse(_model.GetAppSetting(SettingName.DEFAULT_WORKITEM_COB_MINS)), 
                 0);
+            if (_model.GetAppSetting(SettingName.DUE_DATE_CAN_BE_WEEKENDS) == "0")
+            {
+                if (dueDate.DayOfWeek == DayOfWeek.Saturday)
+                {
+                    dueDate.AddDays(2);
+                }
+                else if (dueDate.DayOfWeek == DayOfWeek.Sunday) {
+                    dueDate.AddDays(1);
+                }
+            }
             wi.DueDate = dueDate;
 
             // Get the default active Status (note due to DB constraints there can only be one).
             wi.Status = GetWorkItemStatuses(true, true).ToArray()[0].Status;
 
             _model.FireCreateNewWorkItem(wi);
+        }
+
+        public void AddJournalEntry(WorkItem wi, JournalEntry entry)
+        {
+            wi.Journals.Add(entry);
         }
 
         /// <summary>
@@ -106,6 +121,34 @@ namespace MyWorkTracker.Code
             return rValue;
         }
 
+        public void LoadJournalsFromDB(WorkItem wi)
+        {
+            using (var connection = new SQLiteConnection(dbConnectionString))
+            {
+                using (var cmd = new SQLiteCommand(connection))
+                {
+                    connection.Open();
+                    cmd.CommandText = "SELECT * FROM vwActiveJournal WHERE WorkItem_ID = @workItemID";
+                    cmd.Parameters.AddWithValue("@workItemID", wi.Meta.WorkItem_ID);
+
+                    using (SQLiteDataReader reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            JournalEntry je = new JournalEntry();
+                            je.JournalID = Convert.ToInt32(reader["Journal_ID"]);
+                            je.Title = (string)reader["Header"];
+                            je.Entry = (string)reader["Entry"];
+                            je.CreationDateTime = Convert.ToDateTime(reader["CreationDateTime"].ToString());
+                            wi.Journals.Add(je);
+                        }
+                    }
+                    connection.Close();
+                }
+            }
+            wi.Meta.AreJournalItemsLoaded = true;
+        }
+
         /// <summary>
         /// Load the WorkItems from the database.
         /// </summary>
@@ -122,16 +165,16 @@ namespace MyWorkTracker.Code
                     {
                         while (reader.Read())
                         {
-                            WorkItem t = new WorkItem();
-                            t.Meta.WorkItem_ID = Convert.ToInt32(reader["WorkItem_ID"]);
-                            t.Title = (string)reader["TaskTitle"];
+                            WorkItem wi = new WorkItem();
+                            wi.Meta.WorkItem_ID = Convert.ToInt32(reader["WorkItem_ID"]);
+                            wi.Title = (string)reader["TaskTitle"];
                             if (reader["TaskDescription"].GetType() != typeof(DBNull))
-                                t.TaskDescription = (string)reader["TaskDescription"];
-                            t.Completed = Convert.ToInt32(reader["Complete"]);
-                            t.Status = reader["StatusLabel"].ToString();
-                            t.DueDate = DateTime.Parse(reader["DueDateTime"].ToString());
-                            t.Meta.DueDateUpdateDateTime = DateTime.Parse(reader["DueDateCreationDateTime"].ToString());
-                            _model.AddWorkItem(t, false, false);
+                                wi.TaskDescription = (string)reader["TaskDescription"];
+                            wi.Completed = Convert.ToInt32(reader["Complete"]);
+                            wi.Status = reader["StatusLabel"].ToString();
+                            wi.DueDate = DateTime.Parse(reader["DueDateTime"].ToString());
+                            wi.Meta.DueDateUpdateDateTime = DateTime.Parse(reader["DueDateCreationDateTime"].ToString());
+                            _model.AddWorkItem(wi, false, false);
                         }
                     }
                     connection.Close();
@@ -179,7 +222,6 @@ namespace MyWorkTracker.Code
         /// <returns>Returns the WorkItemStatus ID on insert, or -1</returns>
         public int InsertDBWorkItemStatus(WorkItem wi, string status)
         {
-            Console.WriteLine($"Trying to update status record for {wi.Title}");
             WorkItemStatus wis = GetWorkItemStatus(status);
             int workItemStatusID = -1;
             using (var connection = new SQLiteConnection(dbConnectionString))
@@ -283,7 +325,6 @@ namespace MyWorkTracker.Code
         /// <returns></returns>
         public int UpdateDBWorkItem(WorkItem wi)
         {
-            Console.WriteLine($"Trying to update record for {wi.Title}");
             int workItemID = -1;
             using (var connection = new SQLiteConnection(dbConnectionString))
             {

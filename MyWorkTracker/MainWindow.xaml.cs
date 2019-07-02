@@ -1,5 +1,6 @@
 ﻿using MyWorkTracker.Code;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -31,16 +32,25 @@ namespace MyWorkTracker
 
             GraphicalTaskView.ItemsSource = _model.GetWorkItems();
             WorkItemStatus.ItemsSource = _model.GetWorkItemStatuses();
+            
+            
+            // TODO test
+/*            var list = new List<JournalEntry>();
+            list.Add(new JournalEntry("This is a test entry", "With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata."));
+            list.Add(new JournalEntry("This is a second entry", "With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-"));
+            list.Add(new JournalEntry("This is a test entry", "With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata."));
+            list.Add(new JournalEntry("This is a second entry", "With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-"));
+            list.Add(new JournalEntry("This is a test entry", "With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata."));
+            list.Add(new JournalEntry("This is a second entry", "With more details than a \n" +
+                "cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-"));
+            list.Add(new JournalEntry("This is a test entry", "With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata."));
+            list.Add(new JournalEntry("This is a second entry", "With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-"));
+            JournalEntryList.ItemsSource = list;*/
 
             // Set the application name and version.
             this.Title = $"{_model.GetAppSetting(SettingName.APPLICATION_NAME)} [v{_model.GetAppSetting(SettingName.APPLICATION_VERSION)}]";
 
             DataContext = _model;
-        }
-
-        private void SelectedWorkItemPropertyChanged(string s)
-        {
-            Console.WriteLine(s);
         }
 
         /// <summary>
@@ -68,7 +78,7 @@ namespace MyWorkTracker
                 _model.IsBindingLoading = false;
                 SelectedTaskTitleField.Focus();
 
-                _model.SetApplicationMode(ApplicationMode.ADD_WORK_ITEM);
+                _model.SetApplicationMode(DataEntryMode.ADD_WORK_ITEM);
             }
 
             else if (args.Action == AppAction.SELECT_WORK_ITEM)
@@ -76,6 +86,14 @@ namespace MyWorkTracker
                 // Set to the Status of the selected WorkItem
                 WorkItemStatus.SelectedItem = _controller.GetWorkItemStatus(args.CurrentSelection.Status);
                 DueInDaysTextField.Text = DateMethods.GenerateDateDifferenceLabel(DateTime.Now, _model.SelectedWorkItem.DueDate, true);
+
+                // Check to see if the Journal entries for this Work Item have been loaded
+                if (_model.SelectedWorkItem.Meta.AreJournalItemsLoaded == false)
+                {
+                    _controller.LoadJournalsFromDB(_model.SelectedWorkItem);
+                    JournalEntryList.ItemsSource = _model.SelectedWorkItem.Journals;
+                }
+
                 _model.IsBindingLoading = false;
             }
 
@@ -87,7 +105,6 @@ namespace MyWorkTracker
 
             else if (args.Action == AppAction.WORK_ITEM_STATUS_CHANGED)
             {
-                Console.WriteLine("WORK_ITEM_STATUS_CHANGED select detected");
                 // Check to see if the Status has been set to a 'completed' type. If so, disable the progress bar.
                 bool isCompletedStatus = false;
                 foreach (WorkItemStatus wis in _controller.GetWorkItemStatuses(false))
@@ -101,19 +118,17 @@ namespace MyWorkTracker
 
                 if (isCompletedStatus)
                 {
-                    Console.WriteLine("Is completed");
                     WorkItemProgressSlider.IsEnabled = false;
                 }
                 else
                 {
-                    Console.WriteLine("Is not completed");
                     WorkItemProgressSlider.IsEnabled = true;
                 }
             }
 
             if (args.Action == AppAction.SET_APPLICATION_MODE)
             {
-                if (_model.GetApplicationMode() == ApplicationMode.ADD_WORK_ITEM)
+                if (_model.GetApplicationMode() == DataEntryMode.ADD_WORK_ITEM)
                 {
                     // Make the 'New Work Item' button unavailable.
                     // TODO: Not working
@@ -125,7 +140,7 @@ namespace MyWorkTracker
                     HighlightButton(CancelButton, Brushes.Red);
                     SaveButton.Content = "Create Work Item";
                 }
-                else if (_model.GetApplicationMode() == ApplicationMode.EDIT_WORK_ITEM)
+                else if (_model.GetApplicationMode() == DataEntryMode.EDIT_WORK_ITEM)
                 {
                     // Make the 'New Work Item' button available.
                     NewWorkItemButton.IsEnabled = true;
@@ -185,11 +200,11 @@ namespace MyWorkTracker
             WorkItem selectedWorkItem = _model.SelectedWorkItem;
 
             // If the application is in 'add mode' then we want to insert a record.
-            if (_model.GetApplicationMode() == ApplicationMode.ADD_WORK_ITEM)
+            if (_model.GetApplicationMode() == DataEntryMode.ADD_WORK_ITEM)
             {
                 _controller.InsertDBWorkItem(selectedWorkItem);
                 _model.AddWorkItem(selectedWorkItem, true, true);
-                _model.SetApplicationMode(ApplicationMode.EDIT_WORK_ITEM);
+                _model.SetApplicationMode(DataEntryMode.EDIT_WORK_ITEM);
             }
         }
 
@@ -201,7 +216,7 @@ namespace MyWorkTracker
             WorkItem selectedWorkItem = _model.SelectedWorkItem;
 
             // Ensure that a WorkItem has been selected.
-            if ((selectedWorkItem != null) && (_model.GetApplicationMode() == ApplicationMode.EDIT_WORK_ITEM))
+            if ((selectedWorkItem != null) && (_model.GetApplicationMode() == DataEntryMode.EDIT_WORK_ITEM))
             {
                 if (selectedWorkItem.Meta.WorkItemDBNeedsUpdate)
                 {
@@ -244,6 +259,12 @@ namespace MyWorkTracker
                 _model.SelectedWorkItem.Meta.WorkItemDBNeedsUpdate = true;
         }
 
+        /// <summary>
+        /// Event is called when any of the following controls fire an event to say they've been updated:
+        /// * Progress Bar
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void WorkItemChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
             if (e.NewValue == 100)
@@ -276,7 +297,7 @@ namespace MyWorkTracker
             if (_model.SelectedWorkItem != null)
             {
                 DateTime currentDueDate = _model.SelectedWorkItem.DueDate;
-                var ddw = new DueDateWindow(currentDueDate);
+                var ddw = new DueDateDialog(currentDueDate);
                 ddw.Owner = this;
                 ddw.ShowDialog();
 
@@ -331,7 +352,14 @@ namespace MyWorkTracker
         private void CancelButton_Click(object sender, RoutedEventArgs e)
         {
             _model.SelectedWorkItem = null;
-            _model.SetApplicationMode(ApplicationMode.EDIT_WORK_ITEM);
+            _model.SetApplicationMode(DataEntryMode.EDIT_WORK_ITEM);
+        }
+
+        private void AddJournalButton_Click(object sender, RoutedEventArgs e)
+        {
+            var journalEntry = new JournalDialog();
+            journalEntry.Owner = this;
+            journalEntry.ShowDialog();
         }
     }
 }

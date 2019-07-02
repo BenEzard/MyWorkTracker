@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
@@ -16,6 +17,8 @@ namespace MyWorkTracker.Code
         private int _amountComplete = 0;
         public DateTime CreateDateTime { get; set; } = DateTime.Now;
         private DateTime _dueDateTime;
+
+        public List<JournalEntry> Journals = new List<JournalEntry>();
 
         public WorkItem()
         {

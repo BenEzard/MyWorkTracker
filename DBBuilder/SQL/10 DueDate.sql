@@ -2,6 +2,9 @@
     DueDate_ID INTEGER       PRIMARY KEY AUTOINCREMENT, 
     WorkItem_ID INTEGER       REFERENCES WorkItems (WorkItem_ID), 
     DueDateTime DATETIME      NOT NULL,
-    ChangeReason VARCHAR (500),
-    CreationDateTime DATETIME      DEFAULT(CURRENT_TIMESTAMP)
-)
+    ChangeReason VARCHAR (500) NULL,
+    CreationDateTime DATETIME NOT NULL DEFAULT(CURRENT_TIMESTAMP)
+);
+
+INSERT INTO DueDate (WorkItem_ID, DueDateTime) VALUES
+	(1, '2019-08-05 13:30:00.000')

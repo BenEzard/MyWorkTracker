@@ -41,7 +41,7 @@ namespace MyWorkTracker.Data
 
                     foreach (string filePath in sqlFileList)
                     {
-                        //Console.WriteLine($"Loading SQL file: {filePath}");
+                        Console.WriteLine($"Loading SQL file: {filePath}");
                         cmd.CommandText = File.ReadAllText(filePath);
                         cmd.ExecuteNonQuery();
                     }

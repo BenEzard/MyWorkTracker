@@ -87,7 +87,7 @@ namespace MyWorkTracker.Code
         /// In ADD mode, the top portion of the window (Work Item Selection area) is disabled, focusing the user on completing
         /// the current in-creation WorkItem.
         /// </summary>
-        private ApplicationMode _appMode = ApplicationMode.EDIT_WORK_ITEM;
+        private DataEntryMode _appMode = DataEntryMode.EDIT_WORK_ITEM;
         /// <summary>
         /// Returns whether or not the application is currently in 'add' mode.
         /// </summary>
@@ -97,7 +97,7 @@ namespace MyWorkTracker.Code
             get
             {
                 bool rValue = false;
-                if (_appMode == ApplicationMode.ADD_WORK_ITEM)
+                if (_appMode == DataEntryMode.ADD_WORK_ITEM)
                     rValue = true;
                 return rValue;
             }
@@ -231,7 +231,6 @@ namespace MyWorkTracker.Code
         /// <param name="wt"></param>
         public void SetSelectedWorkItem(WorkItem wt)
         {
-            Console.WriteLine($" A new work item has been selected: {wt.Title}");
             IsBindingLoading = true;
 
             if (_selectedWorkItem != null)
@@ -248,7 +247,7 @@ namespace MyWorkTracker.Code
         /// Set the mode the Application is in.
         /// </summary>
         /// <param name="mode"></param>
-        public void SetApplicationMode(ApplicationMode mode)
+        public void SetApplicationMode(DataEntryMode mode)
         {
             _appMode = mode;
             OnPropertyChanged("");
@@ -260,7 +259,7 @@ namespace MyWorkTracker.Code
         /// Return the mode that the application is currently in.
         /// </summary>
         /// <returns></returns>
-        public ApplicationMode GetApplicationMode()
+        public DataEntryMode GetApplicationMode()
         {
             return _appMode;
         }
