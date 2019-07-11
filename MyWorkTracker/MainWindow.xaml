@@ -10,16 +10,26 @@
             Height="750" Width="750" Left="100" Top="0" Closing="Window_Closing" >
     
     <DockPanel>
-        <ToolBarTray DockPanel.Dock="Top" Margin="0,0,0.333,0">
+        <ToolBarTray DockPanel.Dock="Top" Margin="0">
             <ToolBar Band="1" BandIndex="1">
                 <Button Name="NewWorkItemButton" Click="CreateNewWorkItemSelected" 
                         VerticalAlignment="Top">
                     <StackPanel Orientation="Horizontal">
-                        <Image Source="Images\report_add.png" Width="26" />
-                        <Label Content="New Work Item"  />
+                        <Image Source="Images\report_add.png" Width="26" ToolTip="New Work Item" />
                     </StackPanel>
                 </Button>
-            </ToolBar>
+                <Button Name="NewJournalEntryButton"
+                        VerticalAlignment="Top">
+                    <StackPanel Orientation="Horizontal">
+                        <Image Source="Images\journal_add.png" Width="26" ToolTip="New Journal Entry" />
+                    </StackPanel>
+                </Button>
+                <Separator />
+                <Button Name="SettingsButton" ToolBar.OverflowMode="Never" HorizontalAlignment="Right" Click="SettingsButton_Click">
+                    <StackPanel Orientation="Horizontal">
+                        <Image Source="Images\settings.png" Width="26" ToolTip="Set Preferences" />
+                    </StackPanel>
+                </Button>            </ToolBar>
         </ToolBarTray>
         
         <Grid>
@@ -130,24 +140,50 @@
                     </TabItem>
 
                     <!-- Journal -->
-                    <TabItem Name="TabTaskJournal" IsEnabled="{Binding IsWorkItemSelected}"
-                             >
+                    <TabItem Name="TabTaskJournal" IsEnabled="{Binding IsAppInEditMode}" Height="34" VerticalAlignment="Top" >
                         <TabItem.Header>
                             <Image Width="26" Source="Images\book_open.png"></Image>
                         </TabItem.Header>
                         <DockPanel>
-                            <StackPanel Orientation="Horizontal" DockPanel.Dock="Top" >
+                            <StackPanel Orientation="Horizontal" DockPanel.Dock="Top">
                                 <TextBlock FontSize="14" FontWeight="Normal" Foreground="Black" Margin="5">Task Journal</TextBlock>
-                                <Button Name="AddJournalButton" 
-                                        Background="Transparent" Margin="20,0,0,0" BorderThickness="0" Click="AddJournalButton_Click">
-                                    <StackPanel Orientation="Horizontal">
-                                        <Image Source="Images\journal_add.png" Width="32" />
-                                    </StackPanel>
+                                <Button Name="AddJournalButton"  Click="AddJournalButton_Click"
+                                        Background="Transparent" Margin="20,0,0,0" BorderThickness="0" ToolTip="New Journal Entry" VerticalAlignment="Center">
+                                        <Image Source="Images\journal_add.png" Width="26" />
+                                </Button>
+                                <Button Name="EditJournalButton" Click="EditJournalButton_Click" IsEnabled="{Binding IsJournalEntrySelected}"
+                                        Background="Transparent" Margin="5,0,0,0" BorderThickness="0" ToolTip="Edit Journal Entry" VerticalAlignment="Center" >
+                                        <Image Source="Images\journal_edit.png" Width="26">
+                                            <Image.Style>
+                                                <Style TargetType="Image">
+                                                    <Style.Triggers>
+                                                        <Trigger Property="IsEnabled" Value="False">
+                                                            <Setter Property="Opacity" Value="0.5" />
+                                                        </Trigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Image.Style>
+                                        </Image>
+                                </Button>
+                                <Button Name="DeleteJournalButton" Click="DeleteJournalButton_Click" IsEnabled="{Binding IsJournalEntrySelected}"
+                                        Background="Transparent" Margin="5,0,0,0" BorderThickness="0" ToolTip="Delete Journal Entry" VerticalAlignment="Center" >
+                                        <Image Source="Images\journal_delete.png" Width="26">
+                                            <Image.Style>
+                                                <Style TargetType="Image">
+                                                    <Style.Triggers>
+                                                        <Trigger Property="IsEnabled" Value="False">
+                                                            <Setter Property="Opacity" Value="0.5" />
+                                                        </Trigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Image.Style>
+                                        </Image>
                                 </Button>
                             </StackPanel>
                             
                             <ListView Name="JournalEntryList"
-                                      ScrollViewer.HorizontalScrollBarVisibility="Disabled" SelectionMode="Single" > 
+                                      
+                                      ScrollViewer.HorizontalScrollBarVisibility="Disabled" SelectionMode="Single" SelectionChanged="JournalEntryList_SelectionChanged" > 
                                 <ListView.ItemTemplate>
                                     <DataTemplate>
                                         <Grid>
@@ -185,31 +221,6 @@
 
                     </TabItem>
 
-                    <!-- Journal -->
-                    <TabItem Name="TabMeta" IsEnabled="{Binding IsWorkItemSelected}"
-                             ToolTip="Journal">
-                        <TabItem.Header>
-                            <Image Width="26" Source="Images\barcode_2d.png"></Image>
-                        </TabItem.Header>
-                        <DockPanel>
-                            <TextBlock DockPanel.Dock="Top" FontSize="14" FontWeight="Normal" Foreground="Black" Margin="5">Work Item Meta Data</TextBlock>
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition />
-                                    <ColumnDefinition />
-                                </Grid.ColumnDefinitions>
-                                <ListView Name="MetaListView">
-                                    <ListView.View>
-                                        <GridView>
-                                            <GridViewColumn Header="Property"/>
-                                            <GridViewColumn Header="Value" />
-                                        </GridView>
-                                    </ListView.View>
-                                </ListView>
-                            </Grid>
-                        </DockPanel>
-
-                    </TabItem>
                 </TabControl>
 
                 <!-- Bottom row -->

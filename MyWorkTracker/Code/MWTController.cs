@@ -19,6 +19,7 @@ namespace MyWorkTracker.Code
             string path = (System.IO.Path.GetDirectoryName(executable));
 
             dbConnectionString = dbConnectionString.Replace("=", "=" + path);
+            Console.WriteLine($"Loading data from {dbConnectionString}");
 
             LoadApplicationSettingsFromDB(true);
             LoadWorkItemStatusesFromDB();
@@ -135,12 +136,12 @@ namespace MyWorkTracker.Code
                     {
                         while (reader.Read())
                         {
-                            JournalEntry je = new JournalEntry();
-                            je.JournalID = Convert.ToInt32(reader["Journal_ID"]);
-                            je.Title = (string)reader["Header"];
-                            je.Entry = (string)reader["Entry"];
-                            je.CreationDateTime = Convert.ToDateTime(reader["CreationDateTime"].ToString());
-                            wi.Journals.Add(je);
+                            int jID = Convert.ToInt32(reader["Journal_ID"]);
+                            string title = (string)reader["Header"];
+                            string entry = (string)reader["Entry"];
+                            DateTime create = Convert.ToDateTime(reader["CreationDateTime"].ToString());
+
+                            wi.Journals.Add(new JournalEntry(jID, title, entry, create));
                         }
                     }
                     connection.Close();
@@ -248,6 +249,73 @@ namespace MyWorkTracker.Code
             return workItemStatusID;
         }
 
+        public int InsertDBJournalEntry(int workItemID, JournalEntry entry)
+        {
+            int journalID = -1;
+
+            using (var connection = new SQLiteConnection(dbConnectionString))
+            {
+                using (var cmd = new SQLiteCommand(connection))
+                {
+                    connection.Open();
+                    cmd.CommandText = "INSERT INTO Journal (WorkItem_ID, Header, Entry) " +
+                        "VALUES (@workItemID, @header, @entry)";
+                    cmd.Parameters.AddWithValue("@workItemID", workItemID);
+                    cmd.Parameters.AddWithValue("@header", entry.Title);
+                    cmd.Parameters.AddWithValue("@entry", entry.Entry);
+                    cmd.ExecuteNonQuery();
+
+                    // Get the identity value
+                    cmd.CommandText = "SELECT last_insert_rowid()";
+                    journalID = (int)(Int64)cmd.ExecuteScalar();
+                }
+                connection.Close();
+            }
+            return journalID;
+        }
+
+        /// <summary>
+        /// Update the Journal entry
+        /// </summary>
+        /// <param name="entry"></param>
+        public void UpdateDBJournalEntry(JournalEntry entry)
+        {
+            using (var connection = new SQLiteConnection(dbConnectionString))
+            {
+                using (var cmd = new SQLiteCommand(connection))
+                {
+                    connection.Open();
+                    cmd.CommandText = "UPDATE Journal SET Header=@header, Entry=@entry WHERE Journal_ID = @journalID";
+                    cmd.Parameters.AddWithValue("@journalID", entry.JournalID);
+                    cmd.Parameters.AddWithValue("@header", entry.Title);
+                    cmd.Parameters.AddWithValue("@entry", entry.Entry);
+                    cmd.ExecuteNonQuery();
+                }
+                connection.Close();
+            }
+        }
+
+        public void DeleteDBJournalEntry(JournalEntry entry)
+        {
+            // Delete from the database
+            using (var connection = new SQLiteConnection(dbConnectionString))
+            {
+                using (var cmd = new SQLiteCommand(connection))
+                {
+                    connection.Open();
+                    cmd.CommandText = "UPDATE Journal SET DeletionDateTime = @now WHERE Journal_ID = @journalID";
+                    cmd.Parameters.AddWithValue("@journalID", entry.JournalID);
+                    cmd.Parameters.AddWithValue("@now", DateTime.Now);
+                    cmd.ExecuteNonQuery();
+                }
+                connection.Close();
+            }
+
+            // Delete from memory
+            _model.SelectedWorkItem.Journals.Remove(_model.SelectedJournalEntry);
+            _model.SelectedJournalEntry = null;
+        }
+
         /// <summary>
         /// Load the application Settings from the database.
         /// </summary>
@@ -277,6 +345,34 @@ namespace MyWorkTracker.Code
                     connection.Close();
                 }
             }
+        }
+
+        public bool UpdateApplicationSettingDB(SettingName name, string value)
+        {
+            bool rValue = false;
+            int result = -1;
+            // Update database
+            using (var connection = new SQLiteConnection(dbConnectionString))
+            {
+                using (var cmd = new SQLiteCommand(connection))
+                {
+                    connection.Open();
+                    cmd.CommandText = "UPDATE Setting SET [Value] = @value WHERE [Name]=@name AND UserCanEdit='Y'";
+                    cmd.Parameters.AddWithValue("@name", name.ToString());
+                    cmd.Parameters.AddWithValue("@value", value);
+                    result = cmd.ExecuteNonQuery();
+                }
+                connection.Close();
+            }
+
+            if (result > 0)
+            {
+                // Update in memory
+                var settings = _model.GetAppSettingCollection();
+                settings[name] = value;
+                rValue = true;
+            }
+            return rValue;
         }
 
         /// <summary>

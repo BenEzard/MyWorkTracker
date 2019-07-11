@@ -33,7 +33,7 @@ namespace MyWorkTracker
             }
         }
 
-        public bool WasWindowSubmitted { get; set; } = false;
+        public bool WasDialogSubmitted { get; set; } = false;
 
         /// <summary>
         /// Return the selected 'Change Reason'
@@ -59,7 +59,7 @@ namespace MyWorkTracker
             Collection<CalendarDateRange> dates = new Collection<CalendarDateRange>();
             // Add the first Sunday
             CalendarSelection.BlackoutDates.Add(new CalendarDateRange(MostRecentSaturday.AddDays(1)));
-            for (int i = 0; i < 100; i++)
+            for (int i = 0; i < 52; i++)
             {
                 DateTime nextSaturday = MostRecentSaturday.AddDays(7);
                 CalendarSelection.BlackoutDates.Add(new CalendarDateRange(nextSaturday, nextSaturday.AddDays(1)));
@@ -190,14 +190,19 @@ namespace MyWorkTracker
 
         private void ApplyDueDateChangeButton_Click(object sender, RoutedEventArgs e)
         {
-            WasWindowSubmitted = true;
+            WasDialogSubmitted = true;
             this.Close();
         }
 
         private void CancelButton_Click(object sender, RoutedEventArgs e)
         {
-            WasWindowSubmitted = false;
+            WasDialogSubmitted = false;
             this.Close();
+        }
+
+        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            WasDialogSubmitted = false;
         }
     }
 }

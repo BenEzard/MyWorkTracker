@@ -47,35 +47,25 @@ namespace MyWorkTracker.Code
             }
         }
 
-   /*     public bool ShouldProgressBarBeEnabled
+        private JournalEntry _selectedJournalEntry = null;
+        public JournalEntry SelectedJournalEntry
         {
-            get {
+            get { return _selectedJournalEntry; }
+            set { _selectedJournalEntry = value; OnPropertyChanged(""); }
+        }
+
+        public bool IsJournalEntrySelected
+        {
+            get
+            {
                 bool rValue = false;
 
-                if ((IsWorkItemSelected) && (GetWorkItemStatus(_selectedWorkItem.Status).IsConsideredActive))
-                {
+                if (_selectedJournalEntry != null)
                     rValue = true;
-                }
 
                 return rValue;
             }
         }
-
-        public WorkItemStatus GetWorkItemStatus(string status)
-        {
-            WorkItemStatus rValue = null;
-
-            foreach (WorkItemStatus s in _statuses)
-            {
-                if (s.Status.Equals(status))
-                {
-                    rValue = s;
-                    break;
-                }
-            }
-
-            return rValue;
-        }*/
 
         /// <summary>
         /// Keeps track of the previously selected work item.
@@ -87,7 +77,7 @@ namespace MyWorkTracker.Code
         /// In ADD mode, the top portion of the window (Work Item Selection area) is disabled, focusing the user on completing
         /// the current in-creation WorkItem.
         /// </summary>
-        private DataEntryMode _appMode = DataEntryMode.EDIT_WORK_ITEM;
+        private DataEntryMode _appMode = DataEntryMode.NOT_SET;
         /// <summary>
         /// Returns whether or not the application is currently in 'add' mode.
         /// </summary>
@@ -97,7 +87,18 @@ namespace MyWorkTracker.Code
             get
             {
                 bool rValue = false;
-                if (_appMode == DataEntryMode.ADD_WORK_ITEM)
+                if (_appMode == DataEntryMode.ADD)
+                    rValue = true;
+                return rValue;
+            }
+        }
+
+        public bool IsApplicationInEditMode
+        {
+            get
+            {
+                bool rValue = false;
+                if (_appMode == DataEntryMode.EDIT)
                     rValue = true;
                 return rValue;
             }
@@ -115,6 +116,11 @@ namespace MyWorkTracker.Code
         public MWTModel()
         {
 
+        }
+
+        public Dictionary<SettingName, string> GetAppSettingCollection()
+        {
+            return _appSettings;
         }
 
         protected void OnPropertyChanged(string propertyName)

@@ -17,5 +17,13 @@ namespace MyWorkTracker.Code
             Entry = entry;
         }
 
+        public JournalEntry(int journalID, string title, string entry, DateTime creationDateTime)
+        {
+            JournalID = journalID;
+            Title = title;
+            Entry = entry;
+            CreationDateTime = creationDateTime;
+        }
+
     }
 }

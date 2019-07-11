@@ -2,7 +2,9 @@
 {
     public enum DataEntryMode
     {
-        ADD_WORK_ITEM,
-        EDIT_WORK_ITEM,
+        NOT_SET,
+        ADD,
+        EDIT,
+        DELETE,
     }
 }

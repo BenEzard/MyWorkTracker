@@ -5,32 +5,39 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MyWorkTracker"
         mc:Ignorable="d"
-        Title="Journal Entry" Height="300" Width="300">
+        Title="Journal Entry" Height="300" Width="350" SizeToContent="Height">
     <StackPanel Orientation="Vertical" Margin="5,5,5,0">
         <TextBlock Name="DialogLabel" 
-                   Text="Add a new journal entry" />
+                   Text="{Binding HelperText}" />
         <StackPanel Orientation="Horizontal" Margin="0,5,0,5">
             <TextBlock Text="Heading:" />
             <TextBox Name="JournalHeaderTextBox"
+                     GotFocus="ControlGainsFocus" LostFocus="ControlLosesFocus"
+                     IsEnabled="{Binding IsNotDeleteMode}"
                      Background="LightYellow" 
-                     Width="220" Margin="5,0,0,0" MinLines="2"/>
+                     Width="280" Margin="5,0,0,0" />
         </StackPanel>
-        <TextBox Name="JournalEntryTextBox" 
+        <TextBox Name="JournalEntryTextBox"
+                 IsEnabled="{Binding IsNotDeleteMode}"
                  GotFocus="ControlGainsFocus" LostFocus="ControlLosesFocus"
                  Background="LightYellow" MinLines="10" TextWrapping="Wrap" 
                  AcceptsReturn="True" AcceptsTab="True"
                  />
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-            <Button Margin="5">
+            <CheckBox Name="DontConfirmDeletionCheckBox" IsEnabled="{Binding IsInDeleteMode}"
+                      Content="Don't confirm again" VerticalAlignment="Center"/>
+            <Button Name="CancelButton" Click="CancelButton_Click"
+                Margin="15,5,5,5">
                 <StackPanel Orientation="Horizontal" Margin="5,0,5,0">
                     <Image Source="Images\cancel.png" Width="26" />
                     <TextBlock Text="Cancel" VerticalAlignment="Center" Margin="5,0,0,0" />
                 </StackPanel>
             </Button>
-            <Button Margin="5">
+            <Button Name="ApplyChange" Click="ApplyChange_Click"
+                    Margin="5">
                 <StackPanel Orientation="Horizontal" Margin="5,0,5,0">
-                    <Image Source="Images\journal_add.png" Width="26" />
-                    <TextBlock Text="Add" VerticalAlignment="Center" Margin="5,0,0,0"/>
+                    <Image Source="{Binding GetApplyButtonImagePath}" Width="26" />
+                    <TextBlock Text="{Binding GetApplyButtonLabel}" VerticalAlignment="Center" Margin="5,0,0,0"/>
                 </StackPanel>
             </Button>
         </StackPanel>
