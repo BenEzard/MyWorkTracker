@@ -5,19 +5,19 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MyWorkTracker"
         mc:Ignorable="d"
-        Title="Set Preferences" Height="300" Width="450">
+        Title="Set Preferences" Height="300" Width="460">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="7*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-        <TextBlock Text="Adjust the settings to your preferences." Grid.Column="0" Grid.Row="0" />
+        <TextBlock Text="Adjust the settings to your preferences." Grid.Column="0" Grid.Row="0" Margin="5"/>
         <TabControl TabStripPlacement="Left" Grid.Column="0" Grid.Row="1">
             <TabItem Name="ApplicationTab" Header="Application">
                 <StackPanel Orientation="Vertical">
-                    <CheckBox Content="Save Application position and size on Exit" Margin="5,5,0,5" />
-                    <CheckBox Content="Save current position and size" Margin="5,0,0,5" />
+                    <CheckBox Name="SaveWindowCoordsOnExitCheckBox" Content="Save Application position and size on Exit" Margin="5,5,0,5" />
+                    <CheckBox Name="SaveWindowCoordsCheckBox" Content="Save current position and size of main window" Margin="5,0,0,5" />
                 </StackPanel>
             </TabItem>
             <TabItem Name="DueDatesTab" Header="Due Dates">
@@ -33,10 +33,16 @@
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
-                            <TextBlock Text="Work Days to Complete a Work Item: " Grid.Row="0" Grid.Column="0" Margin="5,5,5,0"/>
-                            <TextBox Width="50" Grid.Row="0" Grid.Column="1" Margin="5" />
+                            <TextBlock Text="Days to Complete a Work Item: " Grid.Row="0" Grid.Column="0" Margin="0,5,5,0"/>
+                            <StackPanel Orientation="Horizontal" Margin="0" Grid.Row="0" Grid.Column="1" VerticalAlignment="Center">
+                                <Slider Name="DaysToCompleteSlider" ValueChanged="DaysToCompleteSlider_ValueChanged"
+                                        IsSnapToTickEnabled="True" TickFrequency="1"
+                                        Margin="5" IsMoveToPointEnabled="True" Minimum="1" Maximum="120" Width="120"/>
+                                <TextBox Name="WorkDaysToCompleteTextBox" Width="30" Height="18" IsEnabled="False" />
+                            </StackPanel>
                             <TextBlock Text="Time (Hour) when Due: " Grid.Row="1" Grid.Column="0" VerticalAlignment="Center" />
-                            <ComboBox Name="HourCombo" Grid.Row="1" Grid.Column="1" Margin="5,5,5,0" Width="50">
+                            <ComboBox Name="HourCombo" 
+                                      Grid.Row="1" Grid.Column="1" Margin="5,5,5,0" Width="50">
                                 <ComboBoxItem>07</ComboBoxItem>
                                 <ComboBoxItem>08</ComboBoxItem>
                                 <ComboBoxItem>09</ComboBoxItem>
@@ -51,7 +57,8 @@
                                 <ComboBoxItem>18</ComboBoxItem>
                             </ComboBox>
                             <TextBlock Text="Time (Minutes) when Due: " Grid.Row="2" Grid.Column="0" VerticalAlignment="Center" />
-                            <ComboBox Name="MinuteCombo" Grid.Row="2" Grid.Column="1" Margin="5,5,5,0" Width="50">
+                            <ComboBox Name="MinuteCombo" 
+                                      Grid.Row="2" Grid.Column="1" Margin="5,5,5,0" Width="50">
                                 <ComboBoxItem>00</ComboBoxItem>
                                 <ComboBoxItem>15</ComboBoxItem>
                                 <ComboBoxItem>30</ComboBoxItem>
@@ -59,31 +66,40 @@
                             </ComboBox>
                         </Grid>
                         </GroupBox>
-                    <CheckBox Content="Due Dates can be on weekends" Margin="5,5,5,0" />
+                    <CheckBox Name="DueDateOnWeekendsCheckBox"
+                              Content="Due Date can be on weekends" Margin="5,5,5,0" />
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="Due Date Grace-Period (minutes):" VerticalAlignment="Center" Margin="5" />
-                        <TextBox Width="50" Grid.Row="0" Grid.Column="1" Margin="5" ToolTip="If the Due Date is altered within this time period, don't record it as a change."/>
+                        <Slider Name="GracePeriodSlider" ValueChanged="GracePeriodSlider_ValueChanged"
+                                ToolTip="If the Due Date is altered within this time period, don't record it as a change."
+                                Margin="5" IsSnapToTickEnabled="False" IsMoveToPointEnabled="True" Minimum="1" Maximum="120" Width="120"/>
+                        <TextBox Name="DueDateGracePeriodTextBox"
+                                 IsEnabled="False"
+                                 Width="30" Height="18" Grid.Row="0" Grid.Column="1" Margin="5" />
                     </StackPanel>
                 </StackPanel>
             </TabItem>
             <TabItem Name="JournalTab" Header="Journals">
-                <CheckBox Content="Confirm before deleting journal entries" />
+                <CheckBox Name="ConfirmJournalCheckBox"
+                          Content="Confirm before deleting journal entries" Margin="5"/>
             </TabItem>
         </TabControl>
         <StackPanel Orientation="Horizontal" Grid.Row="2" HorizontalAlignment="Right">
-            <Button Margin="5,5,50,5">
+            <Button Name="ApplyDefaults" Click="ApplyDefaults_Click"
+                    Margin="5,5,40,5">
                 <StackPanel Orientation="Horizontal" Margin="5,0,5,0">
                     <Image Source="Images\settings_reload.png" Width="26" />
                     <TextBlock Text="Apply Defaults &amp; Close" VerticalAlignment="Center" Margin="5,0,0,0" />
                 </StackPanel>
             </Button>
-            <Button Name="CancelButton" Margin="5">
+            <Button Name="CancelButton" Click="CancelButton_Click" Margin="5">
                 <StackPanel Orientation="Horizontal" Margin="5,0,5,0">
                     <Image Source="Images\cancel.png" Width="26" />
                     <TextBlock Text="Cancel" VerticalAlignment="Center" Margin="5,0,0,0" />
                 </StackPanel>
             </Button>
-            <Button Margin="5">
+            <Button Name="SaveSettingsButton" Click="SaveSettingsButton_Click"
+                    Margin="5" >
                 <StackPanel Orientation="Horizontal" Margin="5,0,5,0">
                     <Image Source="Images\settings_save.png" Width="26" />
                     <TextBlock Text="Save Changes" VerticalAlignment="Center" Margin="5,0,0,0" />

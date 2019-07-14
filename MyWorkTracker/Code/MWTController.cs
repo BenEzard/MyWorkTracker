@@ -21,7 +21,7 @@ namespace MyWorkTracker.Code
             dbConnectionString = dbConnectionString.Replace("=", "=" + path);
             Console.WriteLine($"Loading data from {dbConnectionString}");
 
-            LoadApplicationSettingsFromDB(true);
+            LoadApplicationSettingsFromDB();
             LoadWorkItemStatusesFromDB();
 
             LoadWorkItemsFromDB();
@@ -38,13 +38,13 @@ namespace MyWorkTracker.Code
             // Set the due date based on the default.
             // Calculate the due date
             //   1. This will be the current datetime + the default amount
-            DateTime dueDate = DateTime.Now.AddDays(Double.Parse(_model.GetAppSetting(SettingName.DEFAULT_WORKITEM_LENGTH_DAYS)));
+            DateTime dueDate = DateTime.Now.AddDays(Double.Parse(_model.GetAppSettingValue(SettingName.DEFAULT_WORKITEM_LENGTH_DAYS)));
             //   2. + end of the work day
             dueDate = new DateTime(dueDate.Year, dueDate.Month, dueDate.Day,
-                int.Parse(_model.GetAppSetting(SettingName.DEFAULT_WORKITEM_COB_HOURS)),
-                int.Parse(_model.GetAppSetting(SettingName.DEFAULT_WORKITEM_COB_MINS)), 
+                int.Parse(_model.GetAppSettingValue(SettingName.DEFAULT_WORKITEM_COB_HOURS)),
+                int.Parse(_model.GetAppSettingValue(SettingName.DEFAULT_WORKITEM_COB_MINS)), 
                 0);
-            if (_model.GetAppSetting(SettingName.DUE_DATE_CAN_BE_WEEKENDS) == "0")
+            if (_model.GetAppSettingValue(SettingName.DUE_DATE_CAN_BE_WEEKENDS) == "0")
             {
                 if (dueDate.DayOfWeek == DayOfWeek.Saturday)
                 {
@@ -249,6 +249,12 @@ namespace MyWorkTracker.Code
             return workItemStatusID;
         }
 
+        /// <summary>
+        /// Insert a Journal Entry into the database.
+        /// </summary>
+        /// <param name="workItemID"></param>
+        /// <param name="entry"></param>
+        /// <returns></returns>
         public int InsertDBJournalEntry(int workItemID, JournalEntry entry)
         {
             int journalID = -1;
@@ -284,6 +290,8 @@ namespace MyWorkTracker.Code
             {
                 using (var cmd = new SQLiteCommand(connection))
                 {
+                    Console.WriteLine($"Updating {entry.JournalID}, {entry.Title}");
+
                     connection.Open();
                     cmd.CommandText = "UPDATE Journal SET Header=@header, Entry=@entry WHERE Journal_ID = @journalID";
                     cmd.Parameters.AddWithValue("@journalID", entry.JournalID);
@@ -295,6 +303,10 @@ namespace MyWorkTracker.Code
             }
         }
 
+        /// <summary>
+        /// Delete a Journal Entry from the database.
+        /// </summary>
+        /// <param name="entry"></param>
         public void DeleteDBJournalEntry(JournalEntry entry)
         {
             // Delete from the database
@@ -319,8 +331,7 @@ namespace MyWorkTracker.Code
         /// <summary>
         /// Load the application Settings from the database.
         /// </summary>
-        /// <param name="minimalLoad">If minimalLoad=true, only load the name/value columns (and not the other fields in the table)</param>
-        private void LoadApplicationSettingsFromDB(bool minimalLoad)
+        private void LoadApplicationSettingsFromDB()
         {
             using (var connection = new SQLiteConnection(dbConnectionString))
             {
@@ -329,19 +340,21 @@ namespace MyWorkTracker.Code
                     connection.Open();
                     cmd.CommandText = "SELECT * FROM Setting";
 
-                    if (minimalLoad)
+                    using (SQLiteDataReader reader = cmd.ExecuteReader())
                     {
-                        using (SQLiteDataReader reader = cmd.ExecuteReader())
+                        while (reader.Read())
                         {
-                            while (reader.Read())
-                            {
-                                Enum.TryParse((string)reader["Name"], out SettingName settingName);
-                                string settingValue = (string)reader["Value"];
-                                _model.AddAppSetting(settingName, settingValue);
-                            }
+                            string settingNameStr = (string)reader["Name"];
+                            Enum.TryParse(settingNameStr, out SettingName settingName);
+                            string settingValue = (string)reader["Value"];
+                            string defaultValue = (string)reader["DefaultValue"];
+                            string description = (string)reader["Description"];
+                            string userCanEditChar = (string)reader["UserCanEdit"];
+                            bool userCanEdit = (userCanEditChar.Equals("Y")) ? true : false;
+
+                            _model.AddAppSetting(settingName, new Setting(settingName, settingValue, defaultValue, description, userCanEdit));
                         }
                     }
-
                     connection.Close();
                 }
             }
@@ -369,7 +382,7 @@ namespace MyWorkTracker.Code
             {
                 // Update in memory
                 var settings = _model.GetAppSettingCollection();
-                settings[name] = value;
+                settings[name].Value = value;
                 rValue = true;
             }
             return rValue;

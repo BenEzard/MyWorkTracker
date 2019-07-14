@@ -18,10 +18,20 @@
                         <Image Source="Images\report_add.png" Width="26" ToolTip="New Work Item" />
                     </StackPanel>
                 </Button>
-                <Button Name="NewJournalEntryButton"
+                <Button Name="NewJournalEntryButton" IsEnabled="{Binding IsApplicationInEditMode}"
                         VerticalAlignment="Top">
                     <StackPanel Orientation="Horizontal">
-                        <Image Source="Images\journal_add.png" Width="26" ToolTip="New Journal Entry" />
+                        <Image Source="Images\journal_add.png" Width="26" ToolTip="New Journal Entry">
+                            <Image.Style>
+                                <Style TargetType="Image">
+                                    <Style.Triggers>
+                                        <Trigger Property="IsEnabled" Value="False">
+                                            <Setter Property="Opacity" Value="0.5" />
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Image.Style>
+                        </Image>
                     </StackPanel>
                 </Button>
                 <Separator />
@@ -29,7 +39,8 @@
                     <StackPanel Orientation="Horizontal">
                         <Image Source="Images\settings.png" Width="26" ToolTip="Set Preferences" />
                     </StackPanel>
-                </Button>            </ToolBar>
+                </Button>            
+            </ToolBar>
         </ToolBarTray>
         
         <Grid>
@@ -140,7 +151,7 @@
                     </TabItem>
 
                     <!-- Journal -->
-                    <TabItem Name="TabTaskJournal" IsEnabled="{Binding IsAppInEditMode}" Height="34" VerticalAlignment="Top" >
+                    <TabItem Name="TabTaskJournal" IsEnabled="{Binding IsApplicationInEditMode}" Height="34" VerticalAlignment="Top" >
                         <TabItem.Header>
                             <Image Width="26" Source="Images\book_open.png"></Image>
                         </TabItem.Header>

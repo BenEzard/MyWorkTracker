@@ -200,9 +200,9 @@ namespace MyWorkTracker
             this.Close();
         }
 
-        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+/*        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             WasDialogSubmitted = false;
-        }
+        }*/
     }
 }

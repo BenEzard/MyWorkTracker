@@ -25,7 +25,7 @@ namespace MyWorkTracker.Code
         /// <summary>
         /// Collection of application settings.
         /// </summary>
-        private Dictionary<SettingName, string> _appSettings = new Dictionary<SettingName, string>();
+        private Dictionary<SettingName, Setting> _appSettings = new Dictionary<SettingName, Setting>();
 
         /// <summary>
         /// The selected work item.
@@ -118,7 +118,7 @@ namespace MyWorkTracker.Code
 
         }
 
-        public Dictionary<SettingName, string> GetAppSettingCollection()
+        public Dictionary<SettingName, Setting> GetAppSettingCollection()
         {
             return _appSettings;
         }
@@ -183,15 +183,14 @@ namespace MyWorkTracker.Code
         /// Add the Application Setting to the Setting collection (in cache).
         /// </summary>
         /// <param name="settingName"></param>
-        /// <param name="settingValue"></param>
+        /// <param name="setting"></param>
         /// <returns>Returns true if added, false if already in the collection.</returns>
-        public bool AddAppSetting(SettingName settingName, string settingValue)
+        public bool AddAppSetting(SettingName settingName, Setting setting)
         {
             bool rValue = false;
-
             if (_appSettings.ContainsKey(settingName) == false)
             {
-                _appSettings.Add(settingName, settingValue);
+                _appSettings.Add(settingName, setting);
                 rValue = true;
             }
             return rValue;
@@ -271,14 +270,48 @@ namespace MyWorkTracker.Code
         }
 
         /// <summary>
+        /// Fire a notification that a Setting has been requested to change value.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="newValue"></param>
+        public void FireUpdateAppSetting(SettingName name, string newValue)
+        {
+            var eventArgs = new AppEventArgs(AppAction.APPLICATION_SETTING_CHANGED, _appSettings[name], newValue);
+            appEvent?.Invoke(this, eventArgs);
+        }
+
+        /// <summary>
+        /// Fire a notification that a Journal Entry has been requested to be deleted.
+        /// </summary>
+        /// <param name="wi"></param>
+        /// <param name="je"></param>
+        public void FireDeleteJournalEntry(WorkItem wi, JournalEntry je)
+        {
+            var eventArgs = new AppEventArgs(AppAction.JOURNAL_ENTRY_DELETED, wi, je);
+            appEvent?.Invoke(this, eventArgs);
+        }
+
+        public void FireAddJournalEntry(WorkItem wi, JournalEntry je)
+        {
+            var eventArgs = new AppEventArgs(AppAction.JOURNAL_ENTRY_ADDED, wi, je);
+            appEvent?.Invoke(this, eventArgs);
+        }
+
+        public void FireEditJournalEntry(WorkItem wi, JournalEntry oldEntry, JournalEntry newEntry)
+        {
+            var eventArgs = new AppEventArgs(AppAction.JOURNAL_ENTRY_EDITED, wi, oldEntry, newEntry);
+            appEvent?.Invoke(this, eventArgs);
+        }
+
+        /// <summary>
         /// Return an Application Setting from the collection (in cache).
         /// </summary>
         /// <param name="settingName"></param>
         /// <returns></returns>
-        public string GetAppSetting(SettingName settingName)
+        public string GetAppSettingValue(SettingName settingName)
         {
-            _appSettings.TryGetValue(settingName, out string rValue);
-            return rValue;
+            _appSettings.TryGetValue(settingName, out Setting rValue);
+            return rValue.Value;
         }
 
 

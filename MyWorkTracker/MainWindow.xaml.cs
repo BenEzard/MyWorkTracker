@@ -1,5 +1,6 @@
 ﻿using MyWorkTracker.Code;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -32,9 +33,24 @@ namespace MyWorkTracker
             WorkItemStatus.ItemsSource = _model.GetWorkItemStatuses();
 
             // Set the application name and version.
-            this.Title = $"{_model.GetAppSetting(SettingName.APPLICATION_NAME)} [v{_model.GetAppSetting(SettingName.APPLICATION_VERSION)}]";
+            this.Title = $"{_model.GetAppSettingValue(SettingName.APPLICATION_NAME)} [v{_model.GetAppSettingValue(SettingName.APPLICATION_VERSION)}]";
 
             DataContext = _model;
+
+            ApplyWindowPreferences();
+        }
+
+        /// <summary>
+        /// Apply the user-defined window preferences.
+        /// (This doesn't use binding because I didn't want to have to expose the variables --- and not sure if there's another way)u
+        /// </summary>
+        private void ApplyWindowPreferences()
+        {
+            string[] coords = _model.GetAppSettingValue(SettingName.APPLICATION_WINDOW_COORDS).Split(',');
+            this.Left = double.Parse(coords[0]);
+            this.Top = double.Parse(coords[1]);
+            this.Width = double.Parse(coords[2]);
+            this.Height = double.Parse(coords[3]);
         }
 
         /// <summary>
@@ -56,83 +72,102 @@ namespace MyWorkTracker
         /// <param name="args"></param>
         private void AppEventListener(Object o, AppEventArgs args)
         {
-            if (args.Action == AppAction.CREATE_NEW_WORK_ITEM)
+            switch(args.Action)
             {
-                WorkItemStatus.SelectedItem = _controller.GetWorkItemStatus(_model.SelectedWorkItem.Status);
-                _model.IsBindingLoading = false;
-                SelectedTaskTitleField.Focus();
+                case AppAction.CREATE_NEW_WORK_ITEM:
+                    WorkItemStatus.SelectedItem = _controller.GetWorkItemStatus(_model.SelectedWorkItem.Status);
+                    _model.IsBindingLoading = false;
+                    SelectedTaskTitleField.Focus();
 
-                _model.SetApplicationMode(DataEntryMode.ADD);
-            }
+                    _model.SetApplicationMode(DataEntryMode.ADD);
+                    break;
+                case AppAction.SELECT_WORK_ITEM:
+                    // Set to the Status of the selected WorkItem
+                    WorkItemStatus.SelectedItem = _controller.GetWorkItemStatus(args.CurrentWorkItemSelection.Status);
+                    DueInDaysTextField.Text = DateMethods.GenerateDateDifferenceLabel(DateTime.Now, _model.SelectedWorkItem.DueDate, true);
 
-            else if (args.Action == AppAction.SELECT_WORK_ITEM)
-            {
-                // Set to the Status of the selected WorkItem
-                WorkItemStatus.SelectedItem = _controller.GetWorkItemStatus(args.CurrentSelection.Status);
-                DueInDaysTextField.Text = DateMethods.GenerateDateDifferenceLabel(DateTime.Now, _model.SelectedWorkItem.DueDate, true);
-
-                // Check to see if the Journal entries for this Work Item have been loaded
-                if (_model.SelectedWorkItem.Meta.AreJournalItemsLoaded == false)
-                {
-                    _controller.LoadJournalsFromDB(_model.SelectedWorkItem);
-                }
-                JournalEntryList.ItemsSource = _model.SelectedWorkItem.Journals;
-
-                _model.IsBindingLoading = false;
-            }
-
-            else if (args.Action == AppAction.WORK_ITEM_ADDED)
-            {
-                SaveButton.Background = Brushes.SteelBlue;
-                SaveButton.Content = "Save";
-            }
-
-            else if (args.Action == AppAction.WORK_ITEM_STATUS_CHANGED)
-            {
-                // Check to see if the Status has been set to a 'completed' type. If so, disable the progress bar.
-                bool isCompletedStatus = false;
-                foreach (WorkItemStatus wis in _controller.GetWorkItemStatuses(false))
-                {
-                    if (wis.Status.Equals(args.CurrentSelection.Status))
+                    // Check to see if the Journal entries for this Work Item have been loaded
+                    if (_model.SelectedWorkItem.Meta.AreJournalItemsLoaded == false)
                     {
-                        isCompletedStatus = true;
-                        break;
+                        _controller.LoadJournalsFromDB(_model.SelectedWorkItem);
                     }
-                }
+                    JournalEntryList.ItemsSource = _model.SelectedWorkItem.Journals;
 
-                if (isCompletedStatus)
-                {
-                    WorkItemProgressSlider.IsEnabled = false;
-                }
-                else
-                {
-                    WorkItemProgressSlider.IsEnabled = true;
-                }
-            }
+                    _model.SetApplicationMode(DataEntryMode.EDIT);
 
-            if (args.Action == AppAction.SET_APPLICATION_MODE)
-            {
-                if (_model.GetApplicationMode() == DataEntryMode.ADD)
-                {
-                    // Make the 'New Work Item' button unavailable.
-                    // TODO: Not working
-                    NewWorkItemButton.IsEnabled = false;
-
-                    GraphicalTaskView.Background = Brushes.WhiteSmoke;
-
-                    HighlightButton(SaveButton, Brushes.Green);
-                    HighlightButton(CancelButton, Brushes.Red);
-                    SaveButton.Content = "Create Work Item";
-                }
-                else if (_model.GetApplicationMode() == DataEntryMode.EDIT)
-                {
-                    // Make the 'New Work Item' button available.
-                    NewWorkItemButton.IsEnabled = true;
-                    GraphicalTaskView.Background = Brushes.White;
+                    _model.IsBindingLoading = false;
+                    break;
+                case AppAction.WORK_ITEM_ADDED:
+                    SaveButton.Background = Brushes.SteelBlue;
                     SaveButton.Content = "Save";
-                }
+                    break;
+                case AppAction.WORK_ITEM_STATUS_CHANGED:
+                    // Check to see if the Status has been set to a 'completed' type. If so, disable the progress bar.
+                    bool isCompletedStatus = false;
+                    foreach (WorkItemStatus wis in _controller.GetWorkItemStatuses(false))
+                    {
+                        if (wis.Status.Equals(args.CurrentWorkItemSelection.Status))
+                        {
+                            isCompletedStatus = true;
+                            break;
+                        }
+                    }
 
+                    if (isCompletedStatus)
+                    {
+                        WorkItemProgressSlider.IsEnabled = false;
+                    }
+                    else
+                    {
+                        WorkItemProgressSlider.IsEnabled = true;
+                    }
+                    break;
+                case AppAction.SET_APPLICATION_MODE:
+                    if (_model.GetApplicationMode() == DataEntryMode.ADD)
+                    {
+                        // Make the 'New Work Item' button unavailable.
+                        // TODO: Not working
+                        NewWorkItemButton.IsEnabled = false;
+
+                        GraphicalTaskView.Background = Brushes.WhiteSmoke;
+
+                        HighlightButton(SaveButton, Brushes.Green);
+                        HighlightButton(CancelButton, Brushes.Red);
+                        SaveButton.Content = "Create Work Item";
+                    }
+                    else if (_model.GetApplicationMode() == DataEntryMode.EDIT)
+                    {
+                        // Make the 'New Work Item' button available.
+                        NewWorkItemButton.IsEnabled = true;
+                        GraphicalTaskView.Background = Brushes.White;
+                        SaveButton.Content = "Save";
+                    }
+                    break;
+                case AppAction.APPLICATION_SETTING_CHANGED:
+                    // Intentionally there is no in-built protection to stop a user from editing a non-editable value. (Keeping my options open)
+
+                    // Change in memory.
+                    _model.GetAppSettingCollection()[args.Setting.Name].Value = args.StringValue;
+
+                    // Change in storage.
+                    _controller.UpdateApplicationSettingDB(args.Setting.Name, args.StringValue);
+
+                    break;
+                case AppAction.JOURNAL_ENTRY_DELETED:
+                    _controller.DeleteDBJournalEntry(args.JournalEntry);
+                    break;
+                case AppAction.JOURNAL_ENTRY_ADDED:
+                    _controller.InsertDBJournalEntry(args.CurrentWorkItemSelection.Meta.WorkItem_ID, args.JournalEntry);
+                    _controller.AddJournalEntry(args.CurrentWorkItemSelection, args.JournalEntry);
+                    break;
+                case AppAction.JOURNAL_ENTRY_EDITED:
+                    _controller.UpdateDBJournalEntry(args.JournalEntry2);
+                    int indexOf = _model.SelectedWorkItem.Journals.IndexOf(args.JournalEntry);
+                    _model.SelectedWorkItem.Journals.Remove(args.JournalEntry);
+                    _model.SelectedWorkItem.Journals.Insert(indexOf, args.JournalEntry2);
+                    break;
             }
+
         }
 
         /// <summary>
@@ -295,7 +330,7 @@ namespace MyWorkTracker
                     {
                         // If the DueDate (from database) has been set within x mins of now, UPDATE the record instead of INSERTING it.
                         int minutesSinceLastSet = DateTime.Now.Subtract(_model.SelectedWorkItem.Meta.DueDateUpdateDateTime).Minutes;
-                        if (minutesSinceLastSet < Convert.ToInt32(_controller.GetMWTModel().GetAppSetting(SettingName.DUE_DATE_SET_WINDOW_MINUTES)))
+                        if (minutesSinceLastSet < Convert.ToInt32(_controller.GetMWTModel().GetAppSettingValue(SettingName.DUE_DATE_SET_WINDOW_MINUTES)))
                         {
                             // Update
                             _controller.UpdateDBDueDate(_model.SelectedWorkItem, ddw.NewDateTime, ddw.ChangeReason);
@@ -326,6 +361,11 @@ namespace MyWorkTracker
         {
             if (_model.SelectedWorkItem != null)
                 UpdateWorkItemDBAsRequired();
+
+            if (_model.GetAppSettingValue(SettingName.SAVE_WINDOW_COORDS_ON_EXIT).Equals("1")) {
+                string coords = $"{this.Left},{this.Top},{this.Width},{this.Height}";
+                _model.FireUpdateAppSetting(SettingName.APPLICATION_WINDOW_COORDS, coords);
+            }
         }
 
         /// <summary>
@@ -353,8 +393,7 @@ namespace MyWorkTracker
             if (jeDialog.WasDialogSubmitted)
             {
                 JournalEntry je = jeDialog.JournalEntry;
-                _controller.InsertDBJournalEntry(_model.SelectedWorkItem.Meta.WorkItem_ID, je);
-                _controller.AddJournalEntry(_model.SelectedWorkItem, je);
+                _model.FireAddJournalEntry(_model.SelectedWorkItem, je);
             }
         }
 
@@ -365,42 +404,52 @@ namespace MyWorkTracker
         /// <param name="e"></param>
         private void EditJournalButton_Click(object sender, RoutedEventArgs e)
         {
-            JournalEntry je = (JournalEntry)JournalEntryList.SelectedItem;
-            var journalDialog = new JournalDialog(_model.SelectedWorkItem, je, DataEntryMode.EDIT);
+            JournalEntry oldJE = (JournalEntry)JournalEntryList.SelectedItem;
+            var journalDialog = new JournalDialog(_model.SelectedWorkItem, oldJE, DataEntryMode.EDIT);
             journalDialog.Owner = this;
             journalDialog.ShowDialog();
 
             if (journalDialog.WasDialogSubmitted)
             {
-                _controller.UpdateDBJournalEntry(journalDialog.JournalEntry);
-                int indexOf = _model.SelectedWorkItem.Journals.IndexOf(je);
-                _model.SelectedWorkItem.Journals.Remove(je);
-                _model.SelectedWorkItem.Journals.Insert(indexOf, journalDialog.JournalEntry);
+                _model.FireEditJournalEntry(_model.SelectedWorkItem, oldJE, journalDialog.JournalEntry);
             }
         }
 
+        /// <summary>
+        /// The user has selected to delete a journal item.
+        /// If CONFIRM_JOURNAL_DELETION is set to true, the Journal Dialog will be opened to confirm the deletion.
+        /// If not, the journal will be deleted.
+        /// When the dialog is closed, CONFIRM_JOURNAL_DELETION value (from the dialog) is checked.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void DeleteJournalButton_Click(object sender, RoutedEventArgs e)
         {
             JournalEntry je = (JournalEntry)JournalEntryList.SelectedItem;
 
             // Check to see if journal entry deletion should be confirmed.
-            if (_model.GetAppSetting(SettingName.CONFIRM_JOURNAL_DELETION) == "1")
+            if (_model.GetAppSettingValue(SettingName.CONFIRM_JOURNAL_DELETION) == "1")
             {
-                var journalEntry = new JournalDialog(_model.SelectedWorkItem, je, DataEntryMode.DELETE);
-                journalEntry.Owner = this;
-                journalEntry.ShowDialog();
+                var journalDialog = new JournalDialog(_model.SelectedWorkItem, je, DataEntryMode.DELETE);
+                journalDialog.Owner = this;
+                journalDialog.ShowDialog();
 
-                if ((journalEntry.DontConfirmFutureDeletes.HasValue) && (journalEntry.DontConfirmFutureDeletes.Value))
+                if (journalDialog.WasDialogSubmitted)
                 {
-                    _controller.UpdateApplicationSettingDB(SettingName.CONFIRM_JOURNAL_DELETION, "0");
+                    if ((journalDialog.DontConfirmFutureDeletes.HasValue) && (journalDialog.DontConfirmFutureDeletes.Value))
+                    {
+                        _model.FireUpdateAppSetting(SettingName.CONFIRM_JOURNAL_DELETION, "0");
+                    }
+                    _model.FireDeleteJournalEntry(_model.SelectedWorkItem, je);
                 }
 
-                _controller.DeleteDBJournalEntry(je);
             }
             else 
             {
-                _controller.DeleteDBJournalEntry(je);
+                _model.FireDeleteJournalEntry(_model.SelectedWorkItem, je);
             }
+
+
         }
 
         private void JournalEntryList_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -408,11 +457,39 @@ namespace MyWorkTracker
             _model.SelectedJournalEntry = (JournalEntry)JournalEntryList.SelectedItem;
         }
 
+        /// <summary>
+        /// Open the Settings Dialog (User Preferences)
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void SettingsButton_Click(object sender, RoutedEventArgs e)
         {
-            var sd = new SettingsDialog();
-            sd.Owner = this;
-            sd.ShowDialog();
+
+            foreach (SettingName n in _model.GetAppSettingCollection().Keys)
+            {
+                Setting s = _model.GetAppSettingCollection()[n];
+            }
+
+
+            var sDialog = new SettingsDialog(_model.GetAppSettingCollection());
+            sDialog.Owner = this;
+            sDialog.ShowDialog();
+
+            // If the dialog was submitted
+            if (sDialog.WasDialogSubmitted)
+            {
+                if (sDialog.WasSaveWindowCoordinatesSelected)
+                {
+                    string coords = $"{this.Left},{this.Top},{this.Width},{this.Height}";
+                    _model.FireUpdateAppSetting(SettingName.APPLICATION_WINDOW_COORDS, coords);
+                }
+
+                Dictionary<SettingName, string> settingChanges = sDialog.GetChanges;
+                foreach(SettingName name in settingChanges.Keys)
+                {
+                    _model.FireUpdateAppSetting(name, settingChanges[name]);
+                }
+            }
         }
     }
 }
