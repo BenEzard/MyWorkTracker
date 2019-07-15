@@ -6,5 +6,7 @@
     CreationDateTime DATETIME NOT NULL DEFAULT(CURRENT_TIMESTAMP)
 );
 
+CREATE INDEX IDX_DueDate ON [DueDate](WorkItem_ID);
+
 INSERT INTO DueDate (WorkItem_ID, DueDateTime) VALUES
 	(1, '2019-08-05 13:30:00.000')

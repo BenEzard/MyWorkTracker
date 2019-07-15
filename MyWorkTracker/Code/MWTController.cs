@@ -44,14 +44,15 @@ namespace MyWorkTracker.Code
                 int.Parse(_model.GetAppSettingValue(SettingName.DEFAULT_WORKITEM_COB_HOURS)),
                 int.Parse(_model.GetAppSettingValue(SettingName.DEFAULT_WORKITEM_COB_MINS)), 
                 0);
-            if (_model.GetAppSettingValue(SettingName.DUE_DATE_CAN_BE_WEEKENDS) == "0")
+
+            if (_model.GetAppSettingValue(SettingName.DUE_DATE_CAN_BE_WEEKENDS).Equals("0"))
             {
                 if (dueDate.DayOfWeek == DayOfWeek.Saturday)
                 {
-                    dueDate.AddDays(2);
+                    dueDate = dueDate.AddDays(2);
                 }
                 else if (dueDate.DayOfWeek == DayOfWeek.Sunday) {
-                    dueDate.AddDays(1);
+                    dueDate = dueDate.AddDays(1);
                 }
             }
             wi.DueDate = dueDate;
@@ -140,8 +141,13 @@ namespace MyWorkTracker.Code
                             string title = (string)reader["Header"];
                             string entry = (string)reader["Entry"];
                             DateTime create = Convert.ToDateTime(reader["CreationDateTime"].ToString());
+                            DateTime? modifDateTime = null;
+                            if (reader["ModificationDateTime"] != DBNull.Value)
+                            {
+                                modifDateTime = Convert.ToDateTime(reader["ModificationDateTime"].ToString());
+                            }
 
-                            wi.Journals.Add(new JournalEntry(jID, title, entry, create));
+                            wi.Journals.Add(new JournalEntry(jID, title, entry, create, modifDateTime));
                         }
                     }
                     connection.Close();
@@ -293,10 +299,11 @@ namespace MyWorkTracker.Code
                     Console.WriteLine($"Updating {entry.JournalID}, {entry.Title}");
 
                     connection.Open();
-                    cmd.CommandText = "UPDATE Journal SET Header=@header, Entry=@entry WHERE Journal_ID = @journalID";
+                    cmd.CommandText = "UPDATE Journal SET Header=@header, Entry=@entry, ModificationDateTime=@modDateTime WHERE Journal_ID = @journalID";
                     cmd.Parameters.AddWithValue("@journalID", entry.JournalID);
                     cmd.Parameters.AddWithValue("@header", entry.Title);
                     cmd.Parameters.AddWithValue("@entry", entry.Entry);
+                    cmd.Parameters.AddWithValue("@modDateTime", DateTime.Now);
                     cmd.ExecuteNonQuery();
                 }
                 connection.Close();

@@ -81,6 +81,7 @@ namespace MyWorkTracker
 
                     _model.SetApplicationMode(DataEntryMode.ADD);
                     break;
+
                 case AppAction.SELECT_WORK_ITEM:
                     // Set to the Status of the selected WorkItem
                     WorkItemStatus.SelectedItem = _controller.GetWorkItemStatus(args.CurrentWorkItemSelection.Status);
@@ -97,10 +98,12 @@ namespace MyWorkTracker
 
                     _model.IsBindingLoading = false;
                     break;
+
                 case AppAction.WORK_ITEM_ADDED:
                     SaveButton.Background = Brushes.SteelBlue;
                     SaveButton.Content = "Save";
                     break;
+
                 case AppAction.WORK_ITEM_STATUS_CHANGED:
                     // Check to see if the Status has been set to a 'completed' type. If so, disable the progress bar.
                     bool isCompletedStatus = false;
@@ -122,6 +125,7 @@ namespace MyWorkTracker
                         WorkItemProgressSlider.IsEnabled = true;
                     }
                     break;
+
                 case AppAction.SET_APPLICATION_MODE:
                     if (_model.GetApplicationMode() == DataEntryMode.ADD)
                     {
@@ -143,6 +147,7 @@ namespace MyWorkTracker
                         SaveButton.Content = "Save";
                     }
                     break;
+
                 case AppAction.APPLICATION_SETTING_CHANGED:
                     // Intentionally there is no in-built protection to stop a user from editing a non-editable value. (Keeping my options open)
 
@@ -153,13 +158,16 @@ namespace MyWorkTracker
                     _controller.UpdateApplicationSettingDB(args.Setting.Name, args.StringValue);
 
                     break;
+
                 case AppAction.JOURNAL_ENTRY_DELETED:
                     _controller.DeleteDBJournalEntry(args.JournalEntry);
                     break;
+
                 case AppAction.JOURNAL_ENTRY_ADDED:
                     _controller.InsertDBJournalEntry(args.CurrentWorkItemSelection.Meta.WorkItem_ID, args.JournalEntry);
                     _controller.AddJournalEntry(args.CurrentWorkItemSelection, args.JournalEntry);
                     break;
+
                 case AppAction.JOURNAL_ENTRY_EDITED:
                     _controller.UpdateDBJournalEntry(args.JournalEntry2);
                     int indexOf = _model.SelectedWorkItem.Journals.IndexOf(args.JournalEntry);
@@ -411,7 +419,9 @@ namespace MyWorkTracker
 
             if (journalDialog.WasDialogSubmitted)
             {
-                _model.FireEditJournalEntry(_model.SelectedWorkItem, oldJE, journalDialog.JournalEntry);
+                JournalEntry newJournalEntry = journalDialog.JournalEntry;
+                newJournalEntry.ModificationDateTime = DateTime.Now;
+                _model.FireEditJournalEntry(_model.SelectedWorkItem, oldJE, newJournalEntry);
             }
         }
 

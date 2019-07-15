@@ -3,6 +3,7 @@ SELECT		Journal_ID,
 			WorkItem_ID, 
 			Header,
 			[Entry],
-			CreationDateTime
+			CreationDateTime,
+			ModificationDateTime
 FROM		Journal
 WHERE		DeletionDateTime IS NULL;

@@ -37,7 +37,7 @@ namespace MyWorkTracker
         {
             get
             {
-                return new JournalEntry(Entry.JournalID, JournalHeaderTextBox.Text, JournalEntryTextBox.Text, Entry.CreationDateTime);
+                return new JournalEntry(Entry.JournalID, JournalHeaderTextBox.Text, JournalEntryTextBox.Text, Entry.CreationDateTime, Entry.ModificationDateTime);
             }
         }
 
