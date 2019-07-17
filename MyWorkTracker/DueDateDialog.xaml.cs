@@ -19,7 +19,7 @@ namespace MyWorkTracker
     /// <summary>
     /// Interaction logic for DueDateWindow.xaml
     /// </summary>
-    public partial class DueDateWindow : Window
+    public partial class DueDateDialog : Window
     {
         private DateTime _originalDateTime;
 
@@ -33,7 +33,7 @@ namespace MyWorkTracker
             }
         }
 
-        public bool WasWindowSubmitted { get; set; } = false;
+        public bool WasDialogSubmitted { get; set; } = false;
 
         /// <summary>
         /// Return the selected 'Change Reason'
@@ -48,10 +48,23 @@ namespace MyWorkTracker
         /// </summary>
         Border _originalBorder = new Border();
 
-        public DueDateWindow(DateTime currentSelectedDateTime)
+        public DueDateDialog(DateTime currentSelectedDateTime)
         {
             InitializeComponent();
             _originalDateTime = currentSelectedDateTime;
+
+            DateTime StartOfWeek = DateTime.Today.AddDays(-(int)DateTime.Today.DayOfWeek);
+            DateTime MostRecentSaturday = StartOfWeek.AddDays(-1);
+
+            Collection<CalendarDateRange> dates = new Collection<CalendarDateRange>();
+            // Add the first Sunday
+            CalendarSelection.BlackoutDates.Add(new CalendarDateRange(MostRecentSaturday.AddDays(1)));
+            for (int i = 0; i < 52; i++)
+            {
+                DateTime nextSaturday = MostRecentSaturday.AddDays(7);
+                CalendarSelection.BlackoutDates.Add(new CalendarDateRange(nextSaturday, nextSaturday.AddDays(1)));
+                MostRecentSaturday = nextSaturday;
+            }
 
             CustomiseDisplay();
         }
@@ -62,7 +75,9 @@ namespace MyWorkTracker
         private void CustomiseDisplay()
         {
             CalendarSelection.DisplayDateStart = DateTime.Now.Date;
-            CalendarSelection.SelectedDate = DateTime.Now.Date;
+            CalendarSelection.SelectedDate = _originalDateTime.Date;
+
+
             string ddLabel = Convert.ToString(_originalDateTime);
             CurrentDueDateLabel.Text = String.Format("{0:ddd dd/MM HH:mm}", _originalDateTime.ToString());
             SelectComboItem(HourCombo, GetCurrentDueDateHour());
@@ -175,14 +190,19 @@ namespace MyWorkTracker
 
         private void ApplyDueDateChangeButton_Click(object sender, RoutedEventArgs e)
         {
-            WasWindowSubmitted = true;
+            WasDialogSubmitted = true;
             this.Close();
         }
 
         private void CancelButton_Click(object sender, RoutedEventArgs e)
         {
-            WasWindowSubmitted = false;
+            WasDialogSubmitted = false;
             this.Close();
         }
+
+/*        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            WasDialogSubmitted = false;
+        }*/
     }
 }

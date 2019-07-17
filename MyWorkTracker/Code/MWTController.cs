@@ -1,6 +1,7 @@
-﻿using MyWorkTracker.Data;
-using System;
+﻿using System;
+using System.Collections.Generic;
 using System.Data.SQLite;
+using System.Linq;
 
 namespace MyWorkTracker.Code
 {
@@ -18,10 +19,9 @@ namespace MyWorkTracker.Code
             string path = (System.IO.Path.GetDirectoryName(executable));
 
             dbConnectionString = dbConnectionString.Replace("=", "=" + path);
+            Console.WriteLine($"Loading data from {dbConnectionString}");
 
-            //new DBInstaller(path+MWTModel.DatabaseFile, dbConnectionString);
-
-            LoadApplicationSettingsFromDB(true);
+            LoadApplicationSettingsFromDB();
             LoadWorkItemStatusesFromDB();
 
             LoadWorkItemsFromDB();
@@ -38,23 +38,72 @@ namespace MyWorkTracker.Code
             // Set the due date based on the default.
             // Calculate the due date
             //   1. This will be the current datetime + the default amount
-            DateTime dueDate = DateTime.Now.AddDays(Double.Parse(_model.GetAppSetting(SettingName.DEFAULT_WORKITEM_LENGTH_DAYS)));
+            DateTime dueDate = DateTime.Now.AddDays(Double.Parse(_model.GetAppSettingValue(SettingName.DEFAULT_WORKITEM_LENGTH_DAYS)));
             //   2. + end of the work day
-            dueDate = new DateTime(dueDate.Year, dueDate.Month, dueDate.Day, 
-                Int32.Parse(_model.GetAppSetting(SettingName.DEFAULT_WORKITEM_COB_HOURS)), 
-                Int32.Parse(_model.GetAppSetting(SettingName.DEFAULT_WORKITEM_COB_MINS)), 
+            dueDate = new DateTime(dueDate.Year, dueDate.Month, dueDate.Day,
+                int.Parse(_model.GetAppSettingValue(SettingName.DEFAULT_WORKITEM_COB_HOURS)),
+                int.Parse(_model.GetAppSettingValue(SettingName.DEFAULT_WORKITEM_COB_MINS)), 
                 0);
+
+            if (_model.GetAppSettingValue(SettingName.DUE_DATE_CAN_BE_WEEKENDS).Equals("0"))
+            {
+                if (dueDate.DayOfWeek == DayOfWeek.Saturday)
+                {
+                    dueDate = dueDate.AddDays(2);
+                }
+                else if (dueDate.DayOfWeek == DayOfWeek.Sunday) {
+                    dueDate = dueDate.AddDays(1);
+                }
+            }
             wi.DueDate = dueDate;
 
-            // TODO replace
-            wi.Status = "Active";
+            // Get the default active Status (note due to DB constraints there can only be one).
+            wi.Status = GetWorkItemStatuses(true, true).ToArray()[0].Status;
 
             _model.FireCreateNewWorkItem(wi);
+        }
+
+        public void AddJournalEntry(WorkItem wi, JournalEntry entry)
+        {
+            wi.Journals.Add(entry);
+        }
+
+        /// <summary>
+        /// Return WorkItemStatus(es) based on their IsConsideredActive or IsDefault value.
+        /// </summary>
+        /// <param name="isConsideredActive"></param>
+        /// <param name="isDefault"></param>
+        /// <returns></returns>
+        public IEnumerable<WorkItemStatus> GetWorkItemStatuses(bool? isConsideredActive = null, bool? isDefault = null)
+        {
+            IEnumerable<WorkItemStatus> rValue;
+
+            // Return based on isActive
+            if ((isConsideredActive.HasValue == true) && (isDefault.HasValue == false))
+                rValue = _model.GetWorkItemStatuses().Where(u => u.IsConsideredActive == isConsideredActive);
+            // Return based on IsDefault (2 return items possible)
+            else if ((isConsideredActive.HasValue == false) && (isDefault.HasValue == true))
+                rValue = _model.GetWorkItemStatuses().Where(u => u.IsDefault == isDefault);
+            // Return based on isActive and IsDefault
+            else if ((isConsideredActive.HasValue == true) && (isDefault.HasValue == true))
+                rValue = _model.GetWorkItemStatuses().Where(u => u.IsConsideredActive == isConsideredActive && u.IsDefault == isDefault);
+            // Return all
+            else
+                rValue = _model.GetWorkItemStatuses();
+
+            return rValue;
         }
 
         public MWTModel GetMWTModel()
         {
             return _model;
+        }
+
+        public void SetWorkItemStatus(WorkItem wi, WorkItemStatus wis)
+        {
+            wi.Status = wis.Status;
+            wi.Meta.WorkItemStatusNeedsUpdate = true;
+            _model.FireWorkItemStatusChange(wi, wis);
         }
 
         public WorkItemStatus GetWorkItemStatus(string status)
@@ -74,6 +123,39 @@ namespace MyWorkTracker.Code
             return rValue;
         }
 
+        public void LoadJournalsFromDB(WorkItem wi)
+        {
+            using (var connection = new SQLiteConnection(dbConnectionString))
+            {
+                using (var cmd = new SQLiteCommand(connection))
+                {
+                    connection.Open();
+                    cmd.CommandText = "SELECT * FROM vwActiveJournal WHERE WorkItem_ID = @workItemID";
+                    cmd.Parameters.AddWithValue("@workItemID", wi.Meta.WorkItem_ID);
+
+                    using (SQLiteDataReader reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            int jID = Convert.ToInt32(reader["Journal_ID"]);
+                            string title = (string)reader["Header"];
+                            string entry = (string)reader["Entry"];
+                            DateTime create = Convert.ToDateTime(reader["CreationDateTime"].ToString());
+                            DateTime? modifDateTime = null;
+                            if (reader["ModificationDateTime"] != DBNull.Value)
+                            {
+                                modifDateTime = Convert.ToDateTime(reader["ModificationDateTime"].ToString());
+                            }
+
+                            wi.Journals.Add(new JournalEntry(jID, title, entry, create, modifDateTime));
+                        }
+                    }
+                    connection.Close();
+                }
+            }
+            wi.Meta.AreJournalItemsLoaded = true;
+        }
+
         /// <summary>
         /// Load the WorkItems from the database.
         /// </summary>
@@ -90,16 +172,16 @@ namespace MyWorkTracker.Code
                     {
                         while (reader.Read())
                         {
-                            WorkItem t = new WorkItem();
-                            t.Meta.WorkItem_ID = Convert.ToInt32(reader["WorkItem_ID"]);
-                            t.Title = (string)reader["TaskTitle"];
+                            WorkItem wi = new WorkItem();
+                            wi.Meta.WorkItem_ID = Convert.ToInt32(reader["WorkItem_ID"]);
+                            wi.Title = (string)reader["TaskTitle"];
                             if (reader["TaskDescription"].GetType() != typeof(DBNull))
-                                t.TaskDescription = (string)reader["TaskDescription"];
-                            t.Completed = Convert.ToInt32(reader["Complete"]);
-                            t.Status = reader["StatusLabel"].ToString();
-                            t.DueDate = DateTime.Parse(reader["DueDateTime"].ToString());
-                            t.Meta.DueDateUpdateDateTime = DateTime.Parse(reader["DueDateCreationDateTime"].ToString());
-                            _model.AddWorkItem(t, false, false);
+                                wi.TaskDescription = (string)reader["TaskDescription"];
+                            wi.Completed = Convert.ToInt32(reader["Complete"]);
+                            wi.Status = reader["StatusLabel"].ToString();
+                            wi.DueDate = DateTime.Parse(reader["DueDateTime"].ToString());
+                            wi.Meta.DueDateUpdateDateTime = DateTime.Parse(reader["DueDateCreationDateTime"].ToString());
+                            _model.AddWorkItem(wi, false, false);
                         }
                     }
                     connection.Close();
@@ -125,7 +207,12 @@ namespace MyWorkTracker.Code
                         {
                             int id = Convert.ToInt32(reader["Status_ID"]);
                             string status = (string)reader["StatusLabel"];
-                            _model.AddWorkItemStatus(new WorkItemStatus(id, status));
+                            WorkItemStatus wis = new WorkItemStatus(id, status);
+                            wis.IsConsideredActive = (bool)reader["IsConsideredActive"];
+                            wis.IsDefault = (bool)reader["IsDefault"];
+                            if (reader["DeletionDateTime"] != DBNull.Value)
+                                wis.DeletionDate = Convert.ToDateTime(reader["DeletionDateTime"].ToString());
+                            _model.AddWorkItemStatus(wis);
                         }
                     }
 
@@ -169,10 +256,89 @@ namespace MyWorkTracker.Code
         }
 
         /// <summary>
+        /// Insert a Journal Entry into the database.
+        /// </summary>
+        /// <param name="workItemID"></param>
+        /// <param name="entry"></param>
+        /// <returns></returns>
+        public int InsertDBJournalEntry(int workItemID, JournalEntry entry)
+        {
+            int journalID = -1;
+
+            using (var connection = new SQLiteConnection(dbConnectionString))
+            {
+                using (var cmd = new SQLiteCommand(connection))
+                {
+                    connection.Open();
+                    cmd.CommandText = "INSERT INTO Journal (WorkItem_ID, Header, Entry) " +
+                        "VALUES (@workItemID, @header, @entry)";
+                    cmd.Parameters.AddWithValue("@workItemID", workItemID);
+                    cmd.Parameters.AddWithValue("@header", entry.Title);
+                    cmd.Parameters.AddWithValue("@entry", entry.Entry);
+                    cmd.ExecuteNonQuery();
+
+                    // Get the identity value
+                    cmd.CommandText = "SELECT last_insert_rowid()";
+                    journalID = (int)(Int64)cmd.ExecuteScalar();
+                }
+                connection.Close();
+            }
+            return journalID;
+        }
+
+        /// <summary>
+        /// Update the Journal entry
+        /// </summary>
+        /// <param name="entry"></param>
+        public void UpdateDBJournalEntry(JournalEntry entry)
+        {
+            using (var connection = new SQLiteConnection(dbConnectionString))
+            {
+                using (var cmd = new SQLiteCommand(connection))
+                {
+                    Console.WriteLine($"Updating {entry.JournalID}, {entry.Title}");
+
+                    connection.Open();
+                    cmd.CommandText = "UPDATE Journal SET Header=@header, Entry=@entry, ModificationDateTime=@modDateTime WHERE Journal_ID = @journalID";
+                    cmd.Parameters.AddWithValue("@journalID", entry.JournalID);
+                    cmd.Parameters.AddWithValue("@header", entry.Title);
+                    cmd.Parameters.AddWithValue("@entry", entry.Entry);
+                    cmd.Parameters.AddWithValue("@modDateTime", DateTime.Now);
+                    cmd.ExecuteNonQuery();
+                }
+                connection.Close();
+            }
+        }
+
+        /// <summary>
+        /// Delete a Journal Entry from the database.
+        /// </summary>
+        /// <param name="entry"></param>
+        public void DeleteDBJournalEntry(JournalEntry entry)
+        {
+            // Delete from the database
+            using (var connection = new SQLiteConnection(dbConnectionString))
+            {
+                using (var cmd = new SQLiteCommand(connection))
+                {
+                    connection.Open();
+                    cmd.CommandText = "UPDATE Journal SET DeletionDateTime = @now WHERE Journal_ID = @journalID";
+                    cmd.Parameters.AddWithValue("@journalID", entry.JournalID);
+                    cmd.Parameters.AddWithValue("@now", DateTime.Now);
+                    cmd.ExecuteNonQuery();
+                }
+                connection.Close();
+            }
+
+            // Delete from memory
+            _model.SelectedWorkItem.Journals.Remove(_model.SelectedJournalEntry);
+            _model.SelectedJournalEntry = null;
+        }
+
+        /// <summary>
         /// Load the application Settings from the database.
         /// </summary>
-        /// <param name="minimalLoad">If minimalLoad=true, only load the name/value columns (and not the other fields in the table)</param>
-        private void LoadApplicationSettingsFromDB(bool minimalLoad)
+        private void LoadApplicationSettingsFromDB()
         {
             using (var connection = new SQLiteConnection(dbConnectionString))
             {
@@ -181,22 +347,52 @@ namespace MyWorkTracker.Code
                     connection.Open();
                     cmd.CommandText = "SELECT * FROM Setting";
 
-                    if (minimalLoad)
+                    using (SQLiteDataReader reader = cmd.ExecuteReader())
                     {
-                        using (SQLiteDataReader reader = cmd.ExecuteReader())
+                        while (reader.Read())
                         {
-                            while (reader.Read())
-                            {
-                                Enum.TryParse((string)reader["Name"], out SettingName settingName);
-                                string settingValue = (string)reader["Value"];
-                                _model.AddAppSetting(settingName, settingValue);
-                            }
+                            string settingNameStr = (string)reader["Name"];
+                            Enum.TryParse(settingNameStr, out SettingName settingName);
+                            string settingValue = (string)reader["Value"];
+                            string defaultValue = (string)reader["DefaultValue"];
+                            string description = (string)reader["Description"];
+                            string userCanEditChar = (string)reader["UserCanEdit"];
+                            bool userCanEdit = (userCanEditChar.Equals("Y")) ? true : false;
+
+                            _model.AddAppSetting(settingName, new Setting(settingName, settingValue, defaultValue, description, userCanEdit));
                         }
                     }
-
                     connection.Close();
                 }
             }
+        }
+
+        public bool UpdateApplicationSettingDB(SettingName name, string value)
+        {
+            bool rValue = false;
+            int result = -1;
+            // Update database
+            using (var connection = new SQLiteConnection(dbConnectionString))
+            {
+                using (var cmd = new SQLiteCommand(connection))
+                {
+                    connection.Open();
+                    cmd.CommandText = "UPDATE Setting SET [Value] = @value WHERE [Name]=@name AND UserCanEdit='Y'";
+                    cmd.Parameters.AddWithValue("@name", name.ToString());
+                    cmd.Parameters.AddWithValue("@value", value);
+                    result = cmd.ExecuteNonQuery();
+                }
+                connection.Close();
+            }
+
+            if (result > 0)
+            {
+                // Update in memory
+                var settings = _model.GetAppSettingCollection();
+                settings[name].Value = value;
+                rValue = true;
+            }
+            return rValue;
         }
 
         /// <summary>

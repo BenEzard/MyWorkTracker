@@ -13,8 +13,7 @@ namespace MyWorkTracker.Data
         /// The path where all of the SQL files that should be executed are.
         /// Their names should confer the run-order.
         /// </summary>
-        public const string SQLFileLocation = @"D:\Development\Repos\MyWorkTracker\MyWorkTracker\Data\SQL";
-        //public const string SQLFileLocation = @"Data\SQL";
+        public const string SQLFileLocation = @"D:\Development\Repos\MyWorkTracker\DBBuilder\SQL";
 
         public DBInstaller(string dbFilePath, string dbConnectionString)
         {
@@ -42,6 +41,7 @@ namespace MyWorkTracker.Data
 
                     foreach (string filePath in sqlFileList)
                     {
+                        Console.WriteLine($"Loading SQL file: {filePath}");
                         cmd.CommandText = File.ReadAllText(filePath);
                         cmd.ExecuteNonQuery();
                     }

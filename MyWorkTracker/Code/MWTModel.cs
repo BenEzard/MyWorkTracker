@@ -10,6 +10,7 @@ namespace MyWorkTracker.Code
         public const string DatabaseFile = @"\Data\MyWorkTracker.db";
         public delegate void AppEventHandler(object obj, AppEventArgs e);
         public event AppEventHandler appEvent;
+        public event PropertyChangedEventHandler PropertyChanged;
 
         /// <summary>
         /// This collection is the key data of the application; a list of WorkItems.
@@ -24,7 +25,7 @@ namespace MyWorkTracker.Code
         /// <summary>
         /// Collection of application settings.
         /// </summary>
-        private Dictionary<SettingName, string> _appSettings = new Dictionary<SettingName, string>();
+        private Dictionary<SettingName, Setting> _appSettings = new Dictionary<SettingName, Setting>();
 
         /// <summary>
         /// The selected work item.
@@ -46,6 +47,26 @@ namespace MyWorkTracker.Code
             }
         }
 
+        private JournalEntry _selectedJournalEntry = null;
+        public JournalEntry SelectedJournalEntry
+        {
+            get { return _selectedJournalEntry; }
+            set { _selectedJournalEntry = value; OnPropertyChanged(""); }
+        }
+
+        public bool IsJournalEntrySelected
+        {
+            get
+            {
+                bool rValue = false;
+
+                if (_selectedJournalEntry != null)
+                    rValue = true;
+
+                return rValue;
+            }
+        }
+
         /// <summary>
         /// Keeps track of the previously selected work item.
         /// </summary>
@@ -56,7 +77,7 @@ namespace MyWorkTracker.Code
         /// In ADD mode, the top portion of the window (Work Item Selection area) is disabled, focusing the user on completing
         /// the current in-creation WorkItem.
         /// </summary>
-        private ApplicationMode _appMode = ApplicationMode.EDIT_WORK_ITEM;
+        private DataEntryMode _appMode = DataEntryMode.NOT_SET;
         /// <summary>
         /// Returns whether or not the application is currently in 'add' mode.
         /// </summary>
@@ -66,7 +87,18 @@ namespace MyWorkTracker.Code
             get
             {
                 bool rValue = false;
-                if (_appMode == ApplicationMode.ADD_WORK_ITEM)
+                if (_appMode == DataEntryMode.ADD)
+                    rValue = true;
+                return rValue;
+            }
+        }
+
+        public bool IsApplicationInEditMode
+        {
+            get
+            {
+                bool rValue = false;
+                if (_appMode == DataEntryMode.EDIT)
                     rValue = true;
                 return rValue;
             }
@@ -86,7 +118,11 @@ namespace MyWorkTracker.Code
 
         }
 
-        public event PropertyChangedEventHandler PropertyChanged;
+        public Dictionary<SettingName, Setting> GetAppSettingCollection()
+        {
+            return _appSettings;
+        }
+
         protected void OnPropertyChanged(string propertyName)
         {
             if (this.PropertyChanged != null)
@@ -138,7 +174,7 @@ namespace MyWorkTracker.Code
         /// Get the list of potential WorkItem Statuses.
         /// </summary>
         /// <returns></returns>
-        public List<WorkItemStatus> GetWorkItemStatuses()
+        public IEnumerable<WorkItemStatus> GetWorkItemStatuses()
         {
             return _statuses;
         }
@@ -147,15 +183,14 @@ namespace MyWorkTracker.Code
         /// Add the Application Setting to the Setting collection (in cache).
         /// </summary>
         /// <param name="settingName"></param>
-        /// <param name="settingValue"></param>
+        /// <param name="setting"></param>
         /// <returns>Returns true if added, false if already in the collection.</returns>
-        public bool AddAppSetting(SettingName settingName, string settingValue)
+        public bool AddAppSetting(SettingName settingName, Setting setting)
         {
             bool rValue = false;
-
             if (_appSettings.ContainsKey(settingName) == false)
             {
-                _appSettings.Add(settingName, settingValue);
+                _appSettings.Add(settingName, setting);
                 rValue = true;
             }
             return rValue;
@@ -172,6 +207,16 @@ namespace MyWorkTracker.Code
             SelectedWorkItem = wi;
 
             var eventArgs = new AppEventArgs(AppAction.CREATE_NEW_WORK_ITEM, wi);
+            appEvent?.Invoke(this, eventArgs);
+        }
+
+        /// <summary>
+        /// Fire a notification that a Work Item Status has changed for a WorkItem.
+        /// </summary>
+        /// <param name="wi"></param>
+        public void FireWorkItemStatusChange(WorkItem wi, WorkItemStatus wis)
+        {
+            var eventArgs = new AppEventArgs(AppAction.WORK_ITEM_STATUS_CHANGED, wi);
             appEvent?.Invoke(this, eventArgs);
         }
 
@@ -207,7 +252,7 @@ namespace MyWorkTracker.Code
         /// Set the mode the Application is in.
         /// </summary>
         /// <param name="mode"></param>
-        public void SetApplicationMode(ApplicationMode mode)
+        public void SetApplicationMode(DataEntryMode mode)
         {
             _appMode = mode;
             OnPropertyChanged("");
@@ -219,9 +264,43 @@ namespace MyWorkTracker.Code
         /// Return the mode that the application is currently in.
         /// </summary>
         /// <returns></returns>
-        public ApplicationMode GetApplicationMode()
+        public DataEntryMode GetApplicationMode()
         {
             return _appMode;
+        }
+
+        /// <summary>
+        /// Fire a notification that a Setting has been requested to change value.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="newValue"></param>
+        public void FireUpdateAppSetting(SettingName name, string newValue)
+        {
+            var eventArgs = new AppEventArgs(AppAction.APPLICATION_SETTING_CHANGED, _appSettings[name], newValue);
+            appEvent?.Invoke(this, eventArgs);
+        }
+
+        /// <summary>
+        /// Fire a notification that a Journal Entry has been requested to be deleted.
+        /// </summary>
+        /// <param name="wi"></param>
+        /// <param name="je"></param>
+        public void FireDeleteJournalEntry(WorkItem wi, JournalEntry je)
+        {
+            var eventArgs = new AppEventArgs(AppAction.JOURNAL_ENTRY_DELETED, wi, je);
+            appEvent?.Invoke(this, eventArgs);
+        }
+
+        public void FireAddJournalEntry(WorkItem wi, JournalEntry je)
+        {
+            var eventArgs = new AppEventArgs(AppAction.JOURNAL_ENTRY_ADDED, wi, je);
+            appEvent?.Invoke(this, eventArgs);
+        }
+
+        public void FireEditJournalEntry(WorkItem wi, JournalEntry oldEntry, JournalEntry newEntry)
+        {
+            var eventArgs = new AppEventArgs(AppAction.JOURNAL_ENTRY_EDITED, wi, oldEntry, newEntry);
+            appEvent?.Invoke(this, eventArgs);
         }
 
         /// <summary>
@@ -229,10 +308,10 @@ namespace MyWorkTracker.Code
         /// </summary>
         /// <param name="settingName"></param>
         /// <returns></returns>
-        public string GetAppSetting(SettingName settingName)
+        public string GetAppSettingValue(SettingName settingName)
         {
-            _appSettings.TryGetValue(settingName, out string rValue);
-            return rValue;
+            _appSettings.TryGetValue(settingName, out Setting rValue);
+            return rValue.Value;
         }
 
 

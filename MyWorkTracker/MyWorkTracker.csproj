@@ -73,7 +73,15 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Page Include="DueDateWindow.xaml">
+    <Compile Include="Code\Setting.cs" />
+    <Compile Include="SettingsDialog.xaml.cs">
+      <DependentUpon>SettingsDialog.xaml</DependentUpon>
+    </Compile>
+    <Page Include="DueDateDialog.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="JournalDialog.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -87,22 +95,29 @@
     </Compile>
     <Compile Include="Code\AppAction.cs" />
     <Compile Include="Code\AppEventArgs.cs" />
-    <Compile Include="Code\ApplicationMode.cs" />
+    <Compile Include="Code\DataEntryMode.cs" />
     <Compile Include="Code\DateMethods.cs" />
-    <Compile Include="Code\DBInstaller.cs" />
+    <Compile Include="Code\JournalEntry.cs" />
     <Compile Include="Code\MWTController.cs" />
     <Compile Include="Code\MWTModel.cs" />
     <Compile Include="Code\SettingName.cs" />
     <Compile Include="Code\WorkItem.cs" />
     <Compile Include="Code\WorkItemDBMeta.cs" />
     <Compile Include="Code\WorkItemStatus.cs" />
-    <Compile Include="DueDateWindow.xaml.cs">
-      <DependentUpon>DueDateWindow.xaml</DependentUpon>
+    <Compile Include="DueDateDialog.xaml.cs">
+      <DependentUpon>DueDateDialog.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="JournalDialog.xaml.cs">
+      <DependentUpon>JournalDialog.xaml</DependentUpon>
     </Compile>
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Page Include="SettingsDialog.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs">
@@ -131,40 +146,51 @@
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="Data\" />
+  </ItemGroup>
   <ItemGroup>
     <Resource Include="Images\folder-green.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Data\SQL\10 DueDate.sql">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Data\SQL\20 Setting.sql">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Data\SQL\05 WorkItem.sql">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Data\SQL\25 Status.sql">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Data\SQL\30 WorkItemStatus.sql">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Data\SQL\40 vwMostRecentDueDate.sql">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Data\SQL\45 vwMostRecentWorkItemStatus.sql">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Data\SQL\55 vwWorkItem.sql">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
     <Resource Include="Images\folder-blue.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\report.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\report_add.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\Image Attribution.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\book_open.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\journal_add.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\cancel.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\journal_delete.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\journal_edit.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\settings_save.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\settings_reload.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\settings.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="packages\System.Data.SQLite.Core.1.0.110.0\build\net46\System.Data.SQLite.Core.targets" Condition="Exists('packages\System.Data.SQLite.Core.1.0.110.0\build\net46\System.Data.SQLite.Core.targets')" />
