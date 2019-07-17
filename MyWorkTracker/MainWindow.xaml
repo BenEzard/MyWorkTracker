@@ -49,7 +49,7 @@
             </Grid.RowDefinitions>
 
             <TabControl>
-                <TabItem Header="Active">
+                <TabItem Header="Work Items">
                     <ListBox Name="GraphicalTaskView"
                               IsEnabled="{Binding !IsApplicationInAddMode}" SelectionChanged="ActiveWorkItemSelectionChanged"
                               Grid.Row="0" SelectionMode="Single" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
@@ -90,20 +90,6 @@
                             </ItemsPanelTemplate>
                         </ListBox.ItemsPanel>
                     </ListBox>
-                </TabItem>
-
-                <TabItem Header="Closed">
-                    <DataGrid Name="ClosedWorkItemsDataGrid">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="ID" />
-                            <DataGridTextColumn Header="Create Date" />
-                            <DataGridTextColumn Header="Title" />
-                            <DataGridTextColumn Header="Progress" />
-                            <DataGridTextColumn Header="Due Date" />
-                            <DataGridTextColumn Header="Status" />
-                            <DataGridTextColumn Header="Status Date" />
-                        </DataGrid.Columns>
-                    </DataGrid>
                 </TabItem>
             </TabControl>
 
