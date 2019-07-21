@@ -1,7 +1,14 @@
 ﻿CREATE VIEW vwMostRecentWorkItemStatus AS
 SELECT WorkItemStatus.WorkItem_ID,
            WorkItemStatus.Status_ID,
-           StatusLabel
+           StatusLabel,
+           CreationDateTime AS StatusDateTime,
+            CASE
+               WHEN IsConsideredActive = 0 THEN 
+               cast ( (julianday('now') - julianday(CreationDateTime)) as int ) + ( (julianday('now') - julianday(CreationDateTime)) > cast ( (julianday('now') - julianday(CreationDateTime)) as int )) 
+               ELSE -1
+           END AS DaysSinceCompletion,
+           IsConsideredActive
       FROM WorkItemStatus
            INNER JOIN
            (

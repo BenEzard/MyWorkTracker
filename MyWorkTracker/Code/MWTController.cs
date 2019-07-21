@@ -21,10 +21,10 @@ namespace MyWorkTracker.Code
             dbConnectionString = dbConnectionString.Replace("=", "=" + path);
             Console.WriteLine($"Loading data from {dbConnectionString}");
 
-            LoadApplicationSettingsFromDB();
+            LoadApplicationPreferences();
             LoadWorkItemStatusesFromDB();
 
-            LoadWorkItemsFromDB();
+            LoadWorkItems(300);
         }
 
         /// <summary>
@@ -38,14 +38,14 @@ namespace MyWorkTracker.Code
             // Set the due date based on the default.
             // Calculate the due date
             //   1. This will be the current datetime + the default amount
-            DateTime dueDate = DateTime.Now.AddDays(Double.Parse(_model.GetAppSettingValue(SettingName.DEFAULT_WORKITEM_LENGTH_DAYS)));
+            DateTime dueDate = DateTime.Now.AddDays(Double.Parse(_model.GetAppSettingValue(PreferenceName.DEFAULT_WORKITEM_LENGTH_DAYS)));
             //   2. + end of the work day
             dueDate = new DateTime(dueDate.Year, dueDate.Month, dueDate.Day,
-                int.Parse(_model.GetAppSettingValue(SettingName.DEFAULT_WORKITEM_COB_HOURS)),
-                int.Parse(_model.GetAppSettingValue(SettingName.DEFAULT_WORKITEM_COB_MINS)), 
+                int.Parse(_model.GetAppSettingValue(PreferenceName.DEFAULT_WORKITEM_COB_HOURS)),
+                int.Parse(_model.GetAppSettingValue(PreferenceName.DEFAULT_WORKITEM_COB_MINS)), 
                 0);
 
-            if (_model.GetAppSettingValue(SettingName.DUE_DATE_CAN_BE_WEEKENDS).Equals("0"))
+            if (_model.GetAppSettingValue(PreferenceName.DUE_DATE_CAN_BE_WEEKENDS).Equals("0"))
             {
                 if (dueDate.DayOfWeek == DayOfWeek.Saturday)
                 {
@@ -123,7 +123,11 @@ namespace MyWorkTracker.Code
             return rValue;
         }
 
-        public void LoadJournalsFromDB(WorkItem wi)
+        /// <summary>
+        /// Load the Journal Entries for the specified Work Item.
+        /// </summary>
+        /// <param name="wi"></param>
+        public void LoadJournalEntries(WorkItem wi)
         {
             using (var connection = new SQLiteConnection(dbConnectionString))
             {
@@ -157,31 +161,58 @@ namespace MyWorkTracker.Code
         }
 
         /// <summary>
-        /// Load the WorkItems from the database.
+        /// Return the loaded Work Items with the specified active/inactive status.
         /// </summary>
-        private void LoadWorkItemsFromDB()
+        /// <param name="active"></param>
+        /// <returns></returns>
+        public IEnumerable<WorkItem> GetWorkItems(bool active)
+        {
+            return _model.GetWorkItems().Where(u => u.IsConsideredActive == active);
+        }
+
+        /// <summary>
+        /// Load selected Work Items from the database into memory.
+        /// Note that this doesn't include Journal entries, which are lazy-loaded on selection.
+        /// </summary>
+        /// <param name="loadAgedDays">Used to selectively load Work Items based on the number of days since they've been put in a Closed state.
+        /// Use -1 to load only active Work Items
+        /// Use 0 to load only active Work Items + those Completed today. 
+        /// Use 10 would give you active + any Work Items completed in the last 10 calendar days.</param>
+        private void LoadWorkItems(int loadAgedDays)
         {
             using (var connection = new SQLiteConnection(dbConnectionString))
             {
                 using (var cmd = new SQLiteCommand(connection))
                 {
                     connection.Open();
-                    cmd.CommandText = "SELECT * FROM vwWorkItem";
+                    cmd.CommandText = "SELECT * FROM vwWorkItem ORDER BY DaysSinceCompletion ASC, DueDateTime ASC";
 
                     using (SQLiteDataReader reader = cmd.ExecuteReader())
                     {
                         while (reader.Read())
                         {
-                            WorkItem wi = new WorkItem();
-                            wi.Meta.WorkItem_ID = Convert.ToInt32(reader["WorkItem_ID"]);
-                            wi.Title = (string)reader["TaskTitle"];
-                            if (reader["TaskDescription"].GetType() != typeof(DBNull))
-                                wi.TaskDescription = (string)reader["TaskDescription"];
-                            wi.Completed = Convert.ToInt32(reader["Complete"]);
-                            wi.Status = reader["StatusLabel"].ToString();
-                            wi.DueDate = DateTime.Parse(reader["DueDateTime"].ToString());
-                            wi.Meta.DueDateUpdateDateTime = DateTime.Parse(reader["DueDateCreationDateTime"].ToString());
-                            _model.AddWorkItem(wi, false, false);
+                            int daysStale = Convert.ToInt32(reader["DaysSinceCompletion"]);
+
+                            // Only create a WorkItem and add it to the model if DaysSinceCompletion <= loadAgedDays
+                            if (daysStale <= loadAgedDays)
+                            {
+                                WorkItem wi = new WorkItem();
+                                wi.Meta.WorkItem_ID = Convert.ToInt32(reader["WorkItem_ID"]);
+                                wi.Title = (string)reader["TaskTitle"];
+                                if (reader["TaskDescription"].GetType() != typeof(DBNull))
+                                    wi.TaskDescription = (string)reader["TaskDescription"];
+                                wi.Completed = Convert.ToInt32(reader["Complete"]);
+                                wi.DueDate = DateTime.Parse(reader["DueDateTime"].ToString());
+                                wi.Meta.DueDateUpdateDateTime = DateTime.Parse(reader["DueDateCreationDateTime"].ToString());
+                                wi.Status = reader["StatusLabel"].ToString();
+                                wi.Meta.StatusUpdateDateTime = DateTime.Parse(reader["StatusDateTime"].ToString());
+                                wi.IsConsideredActive = Boolean.Parse(reader["IsConsideredActive"].ToString());
+                                _model.AddWorkItem(wi, false, false);
+                            }
+                            else
+                            {
+                                // Console.WriteLine($"Not loading {(string)reader["TaskTitle"]} because it's stale.");
+                            }
                         }
                     }
                     connection.Close();
@@ -336,9 +367,10 @@ namespace MyWorkTracker.Code
         }
 
         /// <summary>
-        /// Load the application Settings from the database.
+        /// Load the application Preferences from the database.
+        /// For a list of Preferences, see PreferenceName.cs
         /// </summary>
-        private void LoadApplicationSettingsFromDB()
+        private void LoadApplicationPreferences()
         {
             using (var connection = new SQLiteConnection(dbConnectionString))
             {
@@ -352,14 +384,14 @@ namespace MyWorkTracker.Code
                         while (reader.Read())
                         {
                             string settingNameStr = (string)reader["Name"];
-                            Enum.TryParse(settingNameStr, out SettingName settingName);
-                            string settingValue = (string)reader["Value"];
+                            Enum.TryParse(settingNameStr, out PreferenceName preferenceName);
+                            string preferenceValue = (string)reader["Value"];
                             string defaultValue = (string)reader["DefaultValue"];
                             string description = (string)reader["Description"];
                             string userCanEditChar = (string)reader["UserCanEdit"];
                             bool userCanEdit = (userCanEditChar.Equals("Y")) ? true : false;
 
-                            _model.AddAppSetting(settingName, new Setting(settingName, settingValue, defaultValue, description, userCanEdit));
+                            _model.AddAppSetting(preferenceName, new Preference(preferenceName, preferenceValue, defaultValue, description, userCanEdit));
                         }
                     }
                     connection.Close();
@@ -367,7 +399,7 @@ namespace MyWorkTracker.Code
             }
         }
 
-        public bool UpdateApplicationSettingDB(SettingName name, string value)
+        public bool UpdateApplicationPreferenceDB(PreferenceName name, string value)
         {
             bool rValue = false;
             int result = -1;

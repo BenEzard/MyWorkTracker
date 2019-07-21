@@ -25,7 +25,7 @@ namespace MyWorkTracker.Code
         /// <summary>
         /// Collection of application settings.
         /// </summary>
-        private Dictionary<SettingName, Setting> _appSettings = new Dictionary<SettingName, Setting>();
+        private Dictionary<PreferenceName, Preference> _appSettings = new Dictionary<PreferenceName, Preference>();
 
         /// <summary>
         /// The selected work item.
@@ -118,7 +118,7 @@ namespace MyWorkTracker.Code
 
         }
 
-        public Dictionary<SettingName, Setting> GetAppSettingCollection()
+        public Dictionary<PreferenceName, Preference> GetAppSettingCollection()
         {
             return _appSettings;
         }
@@ -185,7 +185,7 @@ namespace MyWorkTracker.Code
         /// <param name="settingName"></param>
         /// <param name="setting"></param>
         /// <returns>Returns true if added, false if already in the collection.</returns>
-        public bool AddAppSetting(SettingName settingName, Setting setting)
+        public bool AddAppSetting(PreferenceName settingName, Preference setting)
         {
             bool rValue = false;
             if (_appSettings.ContainsKey(settingName) == false)
@@ -274,7 +274,7 @@ namespace MyWorkTracker.Code
         /// </summary>
         /// <param name="name"></param>
         /// <param name="newValue"></param>
-        public void FireUpdateAppSetting(SettingName name, string newValue)
+        public void FireUpdateAppSetting(PreferenceName name, string newValue)
         {
             var eventArgs = new AppEventArgs(AppAction.APPLICATION_SETTING_CHANGED, _appSettings[name], newValue);
             appEvent?.Invoke(this, eventArgs);
@@ -308,9 +308,9 @@ namespace MyWorkTracker.Code
         /// </summary>
         /// <param name="settingName"></param>
         /// <returns></returns>
-        public string GetAppSettingValue(SettingName settingName)
+        public string GetAppSettingValue(PreferenceName settingName)
         {
-            _appSettings.TryGetValue(settingName, out Setting rValue);
+            _appSettings.TryGetValue(settingName, out Preference rValue);
             return rValue.Value;
         }
 

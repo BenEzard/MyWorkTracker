@@ -49,8 +49,8 @@
             </Grid.RowDefinitions>
 
             <TabControl>
-                <TabItem Header="Work Items">
-                    <ListBox Name="GraphicalTaskView"
+                <TabItem Header="Active">
+                    <ListBox Name="Overview"
                               IsEnabled="{Binding !IsApplicationInAddMode}" SelectionChanged="ActiveWorkItemSelectionChanged"
                               Grid.Row="0" SelectionMode="Single" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                         <ListBox.ItemTemplate>
@@ -90,6 +90,33 @@
                             </ItemsPanelTemplate>
                         </ListBox.ItemsPanel>
                     </ListBox>
+                </TabItem>
+
+                <TabItem Header="Closed">
+                    <ListView Name="ClosedListView" SelectionChanged="ActiveWorkItemSelectionChanged">
+                        <ListView.View>
+                            <GridView>
+                                <GridViewColumn Header="Created" DisplayMemberBinding="{Binding CreateDateTime, StringFormat=\{0:dd/MM HH:mm\}}" Width="80">
+                                </GridViewColumn>
+                                <GridViewColumn Header="Title"  DisplayMemberBinding="{Binding Title}" Width="300" >
+                                    <GridViewColumn.HeaderContainerStyle>
+                                        <Style TargetType="{x:Type GridViewColumnHeader}">
+                                            <Setter Property="HorizontalContentAlignment" Value="Left" />
+                                        </Style>
+                                    </GridViewColumn.HeaderContainerStyle>
+                                </GridViewColumn>
+                                <GridViewColumn Header="Due" DisplayMemberBinding="{Binding DueDate, StringFormat=\{0:dd/MM HH:mm\}}" Width="80" />
+                                <GridViewColumn Header="Status" DisplayMemberBinding="{Binding Status}" Width="150">
+                                    <GridViewColumn.HeaderContainerStyle>
+                                        <Style TargetType="{x:Type GridViewColumnHeader}">
+                                            <Setter Property="HorizontalContentAlignment" Value="Left" />
+                                        </Style>
+                                    </GridViewColumn.HeaderContainerStyle>
+                                </GridViewColumn>
+                                <GridViewColumn Header="Status Date" DisplayMemberBinding="{Binding Meta.StatusUpdateDateTime, StringFormat=\{0:dd/MM HH:mm\}}" Width="80" />
+                            </GridView>
+                        </ListView.View>
+                    </ListView>
                 </TabItem>
             </TabControl>
 

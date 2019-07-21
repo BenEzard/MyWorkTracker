@@ -19,6 +19,12 @@ namespace MyWorkTracker.Code
         public DateTime CreateDateTime { get; set; } = DateTime.Now;
         private DateTime _dueDateTime;
 
+        /// <summary>
+        /// Is this WorkItem considered active?
+        /// This variable is a convenience variable so this object can be selected using LINQ.
+        /// </summary>
+        private bool _isConsideredActive = false;
+
         public ObservableCollection<JournalEntry> Journals = new ObservableCollection<JournalEntry>();
 
         public WorkItem()
@@ -81,6 +87,16 @@ namespace MyWorkTracker.Code
             set
             {
                 _dueDateTime = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public bool IsConsideredActive
+        {
+            get { return _isConsideredActive; }
+            set
+            {
+                _isConsideredActive = value;
                 OnPropertyChanged();
             }
         }

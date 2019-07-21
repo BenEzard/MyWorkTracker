@@ -5,7 +5,7 @@
         public AppAction Action { get; set; }
         public WorkItem CurrentWorkItemSelection { get; set; }
         
-        public Setting Setting { get; set; }
+        public Preference Setting { get; set; }
 
         public JournalEntry JournalEntry { get; set; }
         public JournalEntry JournalEntry2 { get; set; }
@@ -18,7 +18,7 @@
             CurrentWorkItemSelection = current;
         }
 
-        public AppEventArgs(AppAction action, Setting setting, string newValue)
+        public AppEventArgs(AppAction action, Preference setting, string newValue)
         {
             Action = action;
             Setting = setting;

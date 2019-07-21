@@ -29,11 +29,15 @@ namespace MyWorkTracker
 
             _model.appEvent += AppEventListener;
 
-            GraphicalTaskView.ItemsSource = _model.GetWorkItems();
+            // Populate the Overview (the Active tab)
+            Overview.ItemsSource = _controller.GetWorkItems(true); //_model.GetWorkItems();
+            // Populate the Closed tab
+            ClosedListView.ItemsSource = _controller.GetWorkItems(false);  //_model.GetWorkItems();
+
             WorkItemStatus.ItemsSource = _model.GetWorkItemStatuses();
 
             // Set the application name and version.
-            this.Title = $"{_model.GetAppSettingValue(SettingName.APPLICATION_NAME)} [v{_model.GetAppSettingValue(SettingName.APPLICATION_VERSION)}]";
+            this.Title = $"{_model.GetAppSettingValue(PreferenceName.APPLICATION_NAME)} [v{_model.GetAppSettingValue(PreferenceName.APPLICATION_VERSION)}]";
 
             DataContext = _model;
 
@@ -42,11 +46,11 @@ namespace MyWorkTracker
 
         /// <summary>
         /// Apply the user-defined window preferences.
-        /// (This doesn't use binding because I didn't want to have to expose the variables --- and not sure if there's another way)u
+        /// (This doesn't use binding because I didn't want to have to expose the variables --- and not sure if there's another way)
         /// </summary>
         private void ApplyWindowPreferences()
         {
-            string[] coords = _model.GetAppSettingValue(SettingName.APPLICATION_WINDOW_COORDS).Split(',');
+            string[] coords = _model.GetAppSettingValue(PreferenceName.APPLICATION_WINDOW_COORDS).Split(',');
             this.Left = double.Parse(coords[0]);
             this.Top = double.Parse(coords[1]);
             this.Width = double.Parse(coords[2]);
@@ -90,7 +94,7 @@ namespace MyWorkTracker
                     // Check to see if the Journal entries for this Work Item have been loaded
                     if (_model.SelectedWorkItem.Meta.AreJournalItemsLoaded == false)
                     {
-                        _controller.LoadJournalsFromDB(_model.SelectedWorkItem);
+                        _controller.LoadJournalEntries(_model.SelectedWorkItem);
                     }
                     JournalEntryList.ItemsSource = _model.SelectedWorkItem.Journals;
 
@@ -124,6 +128,7 @@ namespace MyWorkTracker
                     {
                         WorkItemProgressSlider.IsEnabled = true;
                     }
+
                     break;
 
                 case AppAction.SET_APPLICATION_MODE:
@@ -133,7 +138,7 @@ namespace MyWorkTracker
                         // TODO: Not working
                         NewWorkItemButton.IsEnabled = false;
 
-                        GraphicalTaskView.Background = Brushes.WhiteSmoke;
+                        Overview.Background = Brushes.WhiteSmoke;
 
                         HighlightButton(SaveButton, Brushes.Green);
                         HighlightButton(CancelButton, Brushes.Red);
@@ -143,7 +148,7 @@ namespace MyWorkTracker
                     {
                         // Make the 'New Work Item' button available.
                         NewWorkItemButton.IsEnabled = true;
-                        GraphicalTaskView.Background = Brushes.White;
+                        Overview.Background = Brushes.White;
                         SaveButton.Content = "Save";
                     }
                     break;
@@ -155,7 +160,7 @@ namespace MyWorkTracker
                     _model.GetAppSettingCollection()[args.Setting.Name].Value = args.StringValue;
 
                     // Change in storage.
-                    _controller.UpdateApplicationSettingDB(args.Setting.Name, args.StringValue);
+                    _controller.UpdateApplicationPreferenceDB(args.Setting.Name, args.StringValue);
 
                     break;
 
@@ -267,7 +272,7 @@ namespace MyWorkTracker
             else
             {
                 UpdateWorkItemDBAsRequired();
-                GraphicalTaskView.Background = Brushes.White;
+                Overview.Background = Brushes.White;
                 WorkItem wi = (WorkItem)(sender as ListBox).SelectedItem;
                 _model.SetSelectedWorkItem(wi);
             }
@@ -338,7 +343,7 @@ namespace MyWorkTracker
                     {
                         // If the DueDate (from database) has been set within x mins of now, UPDATE the record instead of INSERTING it.
                         int minutesSinceLastSet = DateTime.Now.Subtract(_model.SelectedWorkItem.Meta.DueDateUpdateDateTime).Minutes;
-                        if (minutesSinceLastSet < Convert.ToInt32(_controller.GetMWTModel().GetAppSettingValue(SettingName.DUE_DATE_SET_WINDOW_MINUTES)))
+                        if (minutesSinceLastSet < Convert.ToInt32(_controller.GetMWTModel().GetAppSettingValue(PreferenceName.DUE_DATE_SET_WINDOW_MINUTES)))
                         {
                             // Update
                             _controller.UpdateDBDueDate(_model.SelectedWorkItem, ddw.NewDateTime, ddw.ChangeReason);
@@ -370,9 +375,9 @@ namespace MyWorkTracker
             if (_model.SelectedWorkItem != null)
                 UpdateWorkItemDBAsRequired();
 
-            if (_model.GetAppSettingValue(SettingName.SAVE_WINDOW_COORDS_ON_EXIT).Equals("1")) {
+            if (_model.GetAppSettingValue(PreferenceName.SAVE_WINDOW_COORDS_ON_EXIT).Equals("1")) {
                 string coords = $"{this.Left},{this.Top},{this.Width},{this.Height}";
-                _model.FireUpdateAppSetting(SettingName.APPLICATION_WINDOW_COORDS, coords);
+                _model.FireUpdateAppSetting(PreferenceName.APPLICATION_WINDOW_COORDS, coords);
             }
         }
 
@@ -438,7 +443,7 @@ namespace MyWorkTracker
             JournalEntry je = (JournalEntry)JournalEntryList.SelectedItem;
 
             // Check to see if journal entry deletion should be confirmed.
-            if (_model.GetAppSettingValue(SettingName.CONFIRM_JOURNAL_DELETION) == "1")
+            if (_model.GetAppSettingValue(PreferenceName.CONFIRM_JOURNAL_DELETION) == "1")
             {
                 var journalDialog = new JournalDialog(_model.SelectedWorkItem, je, DataEntryMode.DELETE);
                 journalDialog.Owner = this;
@@ -448,7 +453,7 @@ namespace MyWorkTracker
                 {
                     if ((journalDialog.DontConfirmFutureDeletes.HasValue) && (journalDialog.DontConfirmFutureDeletes.Value))
                     {
-                        _model.FireUpdateAppSetting(SettingName.CONFIRM_JOURNAL_DELETION, "0");
+                        _model.FireUpdateAppSetting(PreferenceName.CONFIRM_JOURNAL_DELETION, "0");
                     }
                     _model.FireDeleteJournalEntry(_model.SelectedWorkItem, je);
                 }
@@ -475,9 +480,9 @@ namespace MyWorkTracker
         private void SettingsButton_Click(object sender, RoutedEventArgs e)
         {
 
-            foreach (SettingName n in _model.GetAppSettingCollection().Keys)
+            foreach (PreferenceName n in _model.GetAppSettingCollection().Keys)
             {
-                Setting s = _model.GetAppSettingCollection()[n];
+                Preference s = _model.GetAppSettingCollection()[n];
             }
 
 
@@ -491,15 +496,20 @@ namespace MyWorkTracker
                 if (sDialog.WasSaveWindowCoordinatesSelected)
                 {
                     string coords = $"{this.Left},{this.Top},{this.Width},{this.Height}";
-                    _model.FireUpdateAppSetting(SettingName.APPLICATION_WINDOW_COORDS, coords);
+                    _model.FireUpdateAppSetting(PreferenceName.APPLICATION_WINDOW_COORDS, coords);
                 }
 
-                Dictionary<SettingName, string> settingChanges = sDialog.GetChanges;
-                foreach(SettingName name in settingChanges.Keys)
+                Dictionary<PreferenceName, string> settingChanges = sDialog.GetChanges;
+                foreach(PreferenceName name in settingChanges.Keys)
                 {
                     _model.FireUpdateAppSetting(name, settingChanges[name]);
                 }
             }
         }
+
+/*        private void ClosedListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+
+        }*/
     }
 }

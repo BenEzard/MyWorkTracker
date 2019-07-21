@@ -1,15 +1,18 @@
 ﻿CREATE VIEW vwWorkItem AS 
 SELECT WorkItem.WorkItem_ID, 
-WorkItem.TaskTitle, 
-WorkItem.TaskDescription, 
-WorkItem.Complete, 
-CAST(DueDate.DueDateTime AS NVARCHAR(10)) AS DueDateTime,
-DueDate.DueDateCreationDateTime,
-vwMostRecentWorkItemStatus.Status_ID,
-vwMostRecentWorkItemStatus.StatusLabel
+	WorkItem.TaskTitle, 
+	WorkItem.TaskDescription, 
+	WorkItem.Complete, 
+	DueDate.DueDateTime,
+	DueDate.DueDateCreationDateTime,
+	vwMostRecentWorkItemStatus.Status_ID,
+	vwMostRecentWorkItemStatus.StatusLabel,
+	vwMostRecentWorkItemStatus.StatusDateTime,
+	vwMostRecentWorkItemStatus.IsConsideredActive,
+	vwMostRecentWorkItemStatus.DaysSinceCompletion
 FROM WorkItem
-LEFT JOIN
-           vwMostRecentWorkItemStatus ON WorkItem.WorkItem_ID = vwMostRecentWorkItemStatus.WorkItem_ID
+LEFT JOIN vwMostRecentWorkItemStatus 
+	ON WorkItem.WorkItem_ID = vwMostRecentWorkItemStatus.WorkItem_ID
 LEFT JOIN ( 
     SELECT DueDate.DueDate_ID, 
     DueDate.DueDateTime,
@@ -25,5 +28,6 @@ LEFT JOIN (
     ) 
     AS mxDueDate ON mxDueDate.WorkItem_ID = DueDate.WorkItem_ID AND 
     mxDueDate.mxCreateDate = DueDate.CreationDateTime 
-)
-AS DueDate ON DueDate.WorkItem_ID = WorkItem.WorkItem_ID
+) AS DueDate 
+	ON DueDate.WorkItem_ID = WorkItem.WorkItem_ID
+WHERE WorkItem.DeletionDateTime IS NULL

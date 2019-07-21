@@ -9,11 +9,12 @@
 INSERT INTO Setting ([Name], [Value], DefaultValue, [Description], UserCanEdit) 
 VALUES	/* Application Values - Non configurable */
 		('APPLICATION_NAME', 'MyWorkTracker', 'MyWorkTracker', 'The name of the Application', 'N'),
-		('APPLICATION_VERSION', '0.2.0', '0.2.0', 'The version number of the Application', 'N'),
+		('APPLICATION_VERSION', '0.3.0', '0.3.0', 'The version number of the Application', 'N'),
 
 		/* Application Values - Configurable */
 		('APPLICATION_WINDOW_COORDS', '100,0,750,750', '100,0,750,750', 'The window''s location and size (left, top, width, height)', 'Y'),
 		('SAVE_WINDOW_COORDS_ON_EXIT', '1', '1', 'Should the window''s location and size be saved when the application exits?', 'Y'),
+		('LOAD_STALE_DAYS', '10', '10', 'Load Work Items that were completed this many days ago.', 'Y'),
 
 		/* Due Date variables */
 		('DEFAULT_WORKITEM_LENGTH_DAYS', '35', '5', 'The default number of days that should be added to complete a WorkItem.', 'Y'),

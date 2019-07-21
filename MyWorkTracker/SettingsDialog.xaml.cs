@@ -14,13 +14,13 @@ namespace MyWorkTracker
         /// <summary>
         /// The settings as they were originally passed into the dialog.
         /// </summary>
-        private Dictionary<SettingName, Setting> _originalSettings = null;
+        private Dictionary<PreferenceName, Preference> _originalSettings = null;
 
         /// <summary>
         /// A collection of any changes; the setting name and the new value as a String.
         /// </summary>
-        private Dictionary<SettingName, string> _settingChanges = new Dictionary<SettingName, string>();
-        public Dictionary<SettingName, string> GetChanges
+        private Dictionary<PreferenceName, string> _settingChanges = new Dictionary<PreferenceName, string>();
+        public Dictionary<PreferenceName, string> GetChanges
         {
             get
             {
@@ -55,14 +55,14 @@ namespace MyWorkTracker
         }
 
 
-        public SettingsDialog(Dictionary<SettingName, Setting> originalSettings)
+        public SettingsDialog(Dictionary<PreferenceName, Preference> originalSettings)
         {
             InitializeComponent();
             _originalSettings = originalSettings;
 
-            foreach (SettingName n in _originalSettings.Keys)
+            foreach (PreferenceName n in _originalSettings.Keys)
             {
-                Setting s = _originalSettings[n];
+                Preference s = _originalSettings[n];
             }
 
             PopulateDialog();
@@ -74,24 +74,26 @@ namespace MyWorkTracker
         /// </summary>
         private void PopulateDialog()
         {
-            if (GetOriginalSettingValue(SettingName.SAVE_WINDOW_COORDS_ON_EXIT) == "1")
+            if (GetOriginalSettingValue(PreferenceName.SAVE_WINDOW_COORDS_ON_EXIT) == "1")
                 SaveWindowCoordsOnExitCheckBox.IsChecked = true;
 
-            DaysToCompleteSlider.Value = double.Parse(GetOriginalSettingValue(SettingName.DEFAULT_WORKITEM_LENGTH_DAYS));
+            DaysToCompleteSlider.Value = double.Parse(GetOriginalSettingValue(PreferenceName.DEFAULT_WORKITEM_LENGTH_DAYS));
 
-            SelectComboItem(HourCombo, GetOriginalSettingValue(SettingName.DEFAULT_WORKITEM_COB_HOURS));
+            SelectComboItem(HourCombo, GetOriginalSettingValue(PreferenceName.DEFAULT_WORKITEM_COB_HOURS));
 
-            string cobMins = GetOriginalSettingValue(SettingName.DEFAULT_WORKITEM_COB_MINS);
+            string cobMins = GetOriginalSettingValue(PreferenceName.DEFAULT_WORKITEM_COB_MINS);
             SelectComboItem(MinuteCombo, ((cobMins == "0") ? "00" : cobMins));
 
-            if (GetOriginalSettingValue(SettingName.DUE_DATE_CAN_BE_WEEKENDS) == "1")
+            if (GetOriginalSettingValue(PreferenceName.DUE_DATE_CAN_BE_WEEKENDS) == "1")
                 DueDateOnWeekendsCheckBox.IsChecked = true;
 
-            DueDateGracePeriodTextBox.Text = GetOriginalSettingValue(SettingName.DUE_DATE_SET_WINDOW_MINUTES);
-            GracePeriodSlider.Value = double.Parse(GetOriginalSettingValue(SettingName.DUE_DATE_SET_WINDOW_MINUTES));
+            DueDateGracePeriodTextBox.Text = GetOriginalSettingValue(PreferenceName.DUE_DATE_SET_WINDOW_MINUTES);
+            GracePeriodSlider.Value = double.Parse(GetOriginalSettingValue(PreferenceName.DUE_DATE_SET_WINDOW_MINUTES));
 
-            if (GetOriginalSettingValue(SettingName.CONFIRM_JOURNAL_DELETION) == "1")
+            if (GetOriginalSettingValue(PreferenceName.CONFIRM_JOURNAL_DELETION) == "1")
                 ConfirmJournalCheckBox.IsChecked = true;
+
+            LoadStaleDaysTextBox.Text = GetOriginalSettingValue(PreferenceName.LOAD_STALE_DAYS);
         }
 
         /// <summary>
@@ -99,9 +101,9 @@ namespace MyWorkTracker
         /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>
-        private string GetOriginalSettingValue(SettingName name)
+        private string GetOriginalSettingValue(PreferenceName name)
         {
-            _originalSettings.TryGetValue(name, out Setting sett);
+            _originalSettings.TryGetValue(name, out Preference sett);
             return sett.Value;
         }
 
@@ -112,40 +114,48 @@ namespace MyWorkTracker
         private void GenerateDifferencesToCurrentValues()
         {
             string value = WorkDaysToCompleteTextBox.Text;
-            if (GetOriginalSettingValue(SettingName.DEFAULT_WORKITEM_LENGTH_DAYS).Equals(value, StringComparison.OrdinalIgnoreCase) == false)
-                _settingChanges.Add(SettingName.DEFAULT_WORKITEM_LENGTH_DAYS, value);
+            if (GetOriginalSettingValue(PreferenceName.DEFAULT_WORKITEM_LENGTH_DAYS).Equals(value, StringComparison.OrdinalIgnoreCase) == false)
+                _settingChanges.Add(PreferenceName.DEFAULT_WORKITEM_LENGTH_DAYS, value);
 
             var cbItem = (ComboBoxItem)(HourCombo.SelectedValue);
             value = (string)cbItem.Content;
-            if (GetOriginalSettingValue(SettingName.DEFAULT_WORKITEM_COB_HOURS).Equals(value, StringComparison.OrdinalIgnoreCase) == false)
-                _settingChanges.Add(SettingName.DEFAULT_WORKITEM_COB_HOURS, value);
+            if (GetOriginalSettingValue(PreferenceName.DEFAULT_WORKITEM_COB_HOURS).Equals(value, StringComparison.OrdinalIgnoreCase) == false)
+                _settingChanges.Add(PreferenceName.DEFAULT_WORKITEM_COB_HOURS, value);
 
             cbItem = (ComboBoxItem)(MinuteCombo.SelectedValue);
             value = (string)cbItem.Content;
             // A little bit of extra code used, so that 0 and 00 don't detect as a change.
-            string originalValue = (GetOriginalSettingValue(SettingName.DEFAULT_WORKITEM_COB_MINS));
+            string originalValue = (GetOriginalSettingValue(PreferenceName.DEFAULT_WORKITEM_COB_MINS));
             originalValue = originalValue.Equals("0") ? "00" : originalValue;
             if (originalValue.Equals(value, StringComparison.OrdinalIgnoreCase) == false) 
-                _settingChanges.Add(SettingName.DEFAULT_WORKITEM_COB_MINS, value);
+                _settingChanges.Add(PreferenceName.DEFAULT_WORKITEM_COB_MINS, value);
 
             bool? val = DueDateOnWeekendsCheckBox.IsChecked;
             value = (val.HasValue && val.Value) ? "1" : "0";
-            if (GetOriginalSettingValue(SettingName.DUE_DATE_CAN_BE_WEEKENDS).Equals(value, StringComparison.OrdinalIgnoreCase) == false)
-                _settingChanges.Add(SettingName.DUE_DATE_CAN_BE_WEEKENDS, value);
+            if (GetOriginalSettingValue(PreferenceName.DUE_DATE_CAN_BE_WEEKENDS).Equals(value, StringComparison.OrdinalIgnoreCase) == false)
+                _settingChanges.Add(PreferenceName.DUE_DATE_CAN_BE_WEEKENDS, value);
 
             value = DueDateGracePeriodTextBox.Text;
-            if (GetOriginalSettingValue(SettingName.DUE_DATE_SET_WINDOW_MINUTES).Equals(value, StringComparison.OrdinalIgnoreCase) == false)
-                _settingChanges.Add(SettingName.DUE_DATE_SET_WINDOW_MINUTES, value);
+            if (GetOriginalSettingValue(PreferenceName.DUE_DATE_SET_WINDOW_MINUTES).Equals(value, StringComparison.OrdinalIgnoreCase) == false)
+                _settingChanges.Add(PreferenceName.DUE_DATE_SET_WINDOW_MINUTES, value);
 
             val = ConfirmJournalCheckBox.IsChecked;
             value = (val.HasValue && val.Value) ? "1" : "0";
-            if (GetOriginalSettingValue(SettingName.CONFIRM_JOURNAL_DELETION).Equals(value, StringComparison.OrdinalIgnoreCase) == false)
-                _settingChanges.Add(SettingName.CONFIRM_JOURNAL_DELETION, value);
+            if (GetOriginalSettingValue(PreferenceName.CONFIRM_JOURNAL_DELETION).Equals(value, StringComparison.OrdinalIgnoreCase) == false)
+                _settingChanges.Add(PreferenceName.CONFIRM_JOURNAL_DELETION, value);
 
             val = SaveWindowCoordsOnExitCheckBox.IsChecked;
             value = (val.HasValue && val.Value) ? "1" : "0";
-            if (GetOriginalSettingValue(SettingName.SAVE_WINDOW_COORDS_ON_EXIT).Equals(value, StringComparison.OrdinalIgnoreCase) == false)
-                _settingChanges.Add(SettingName.SAVE_WINDOW_COORDS_ON_EXIT, value);
+            if (GetOriginalSettingValue(PreferenceName.SAVE_WINDOW_COORDS_ON_EXIT).Equals(value, StringComparison.OrdinalIgnoreCase) == false)
+                _settingChanges.Add(PreferenceName.SAVE_WINDOW_COORDS_ON_EXIT, value);
+
+            value = LoadStaleDaysTextBox.Text;
+            var isNumeric = int.TryParse(value, out int staleDays);
+            if (isNumeric == false)
+                value = "9999";
+            if (GetOriginalSettingValue(PreferenceName.LOAD_STALE_DAYS).Equals(value, StringComparison.OrdinalIgnoreCase) == false)
+                _settingChanges.Add(PreferenceName.LOAD_STALE_DAYS, value);
+
         }
 
         /// <summary>
@@ -153,49 +163,56 @@ namespace MyWorkTracker
         /// </summary>
         private void GenerateDifferencesToDefaults()
         {
-            foreach (SettingName name in _originalSettings.Keys)
+            foreach (PreferenceName name in _originalSettings.Keys)
             {
-                Setting s = _originalSettings[name];
+                Preference s = _originalSettings[name];
                 if ((s.UserCanEdit) && (s.Value.Equals(s.DefaultValue, StringComparison.OrdinalIgnoreCase) == false)) {
                     _settingChanges.Add(name, s.DefaultValue);
                 } 
             }
 
             string value = WorkDaysToCompleteTextBox.Text;
-            if (GetOriginalSettingValue(SettingName.DEFAULT_WORKITEM_LENGTH_DAYS).Equals(value, StringComparison.OrdinalIgnoreCase) == false)
-                _settingChanges.Add(SettingName.DEFAULT_WORKITEM_LENGTH_DAYS, value);
+            if (GetOriginalSettingValue(PreferenceName.DEFAULT_WORKITEM_LENGTH_DAYS).Equals(value, StringComparison.OrdinalIgnoreCase) == false)
+                _settingChanges.Add(PreferenceName.DEFAULT_WORKITEM_LENGTH_DAYS, value);
 
             var cbItem = (ComboBoxItem)(HourCombo.SelectedValue);
             value = (string)cbItem.Content;
-            if (GetOriginalSettingValue(SettingName.DEFAULT_WORKITEM_COB_HOURS).Equals(value, StringComparison.OrdinalIgnoreCase) == false)
-                _settingChanges.Add(SettingName.DEFAULT_WORKITEM_COB_HOURS, value);
+            if (GetOriginalSettingValue(PreferenceName.DEFAULT_WORKITEM_COB_HOURS).Equals(value, StringComparison.OrdinalIgnoreCase) == false)
+                _settingChanges.Add(PreferenceName.DEFAULT_WORKITEM_COB_HOURS, value);
 
             cbItem = (ComboBoxItem)(MinuteCombo.SelectedValue);
             value = (string)cbItem.Content;
             // A little bit of extra code used, so that 0 and 00 don't detect as a change.
-            string originalValue = (GetOriginalSettingValue(SettingName.DEFAULT_WORKITEM_COB_MINS));
+            string originalValue = (GetOriginalSettingValue(PreferenceName.DEFAULT_WORKITEM_COB_MINS));
             originalValue = originalValue.Equals("0") ? "00" : originalValue;
             if (originalValue.Equals(value, StringComparison.OrdinalIgnoreCase) == false)
-                _settingChanges.Add(SettingName.DEFAULT_WORKITEM_COB_MINS, value);
+                _settingChanges.Add(PreferenceName.DEFAULT_WORKITEM_COB_MINS, value);
 
             bool? val = DueDateOnWeekendsCheckBox.IsChecked;
             value = (val.HasValue && val.Value) ? "1" : "0";
-            if (GetOriginalSettingValue(SettingName.DUE_DATE_CAN_BE_WEEKENDS).Equals(value, StringComparison.OrdinalIgnoreCase) == false)
-                _settingChanges.Add(SettingName.DUE_DATE_CAN_BE_WEEKENDS, value);
+            if (GetOriginalSettingValue(PreferenceName.DUE_DATE_CAN_BE_WEEKENDS).Equals(value, StringComparison.OrdinalIgnoreCase) == false)
+                _settingChanges.Add(PreferenceName.DUE_DATE_CAN_BE_WEEKENDS, value);
 
             value = DueDateGracePeriodTextBox.Text;
-            if (GetOriginalSettingValue(SettingName.DUE_DATE_SET_WINDOW_MINUTES).Equals(value, StringComparison.OrdinalIgnoreCase) == false)
-                _settingChanges.Add(SettingName.DUE_DATE_SET_WINDOW_MINUTES, value);
+            if (GetOriginalSettingValue(PreferenceName.DUE_DATE_SET_WINDOW_MINUTES).Equals(value, StringComparison.OrdinalIgnoreCase) == false)
+                _settingChanges.Add(PreferenceName.DUE_DATE_SET_WINDOW_MINUTES, value);
 
             val = ConfirmJournalCheckBox.IsChecked;
             value = (val.HasValue && val.Value) ? "1" : "0";
-            if (GetOriginalSettingValue(SettingName.CONFIRM_JOURNAL_DELETION).Equals(value, StringComparison.OrdinalIgnoreCase) == false)
-                _settingChanges.Add(SettingName.CONFIRM_JOURNAL_DELETION, value);
+            if (GetOriginalSettingValue(PreferenceName.CONFIRM_JOURNAL_DELETION).Equals(value, StringComparison.OrdinalIgnoreCase) == false)
+                _settingChanges.Add(PreferenceName.CONFIRM_JOURNAL_DELETION, value);
 
             val = SaveWindowCoordsOnExitCheckBox.IsChecked;
             value = (val.HasValue && val.Value) ? "1" : "0";
-            if (GetOriginalSettingValue(SettingName.SAVE_WINDOW_COORDS_ON_EXIT).Equals(value, StringComparison.OrdinalIgnoreCase) == false)
-                _settingChanges.Add(SettingName.SAVE_WINDOW_COORDS_ON_EXIT, value);
+            if (GetOriginalSettingValue(PreferenceName.SAVE_WINDOW_COORDS_ON_EXIT).Equals(value, StringComparison.OrdinalIgnoreCase) == false)
+                _settingChanges.Add(PreferenceName.SAVE_WINDOW_COORDS_ON_EXIT, value);
+
+            value = LoadStaleDaysTextBox.Text;
+            var isNumeric = int.TryParse(value, out int staleDays);
+            if (isNumeric == false)
+                value = "9999";
+            if (GetOriginalSettingValue(PreferenceName.LOAD_STALE_DAYS).Equals(value, StringComparison.OrdinalIgnoreCase) == false)
+                _settingChanges.Add(PreferenceName.LOAD_STALE_DAYS, value);
         }
 
         /// <summary>

@@ -1,8 +1,8 @@
 ﻿namespace MyWorkTracker.Code
 {
-    public class Setting
+    public class Preference
     {
-        public SettingName Name { get; set; }
+        public PreferenceName Name { get; set; }
         public string Value { get; set; }
         public string DefaultValue { get; set; }
         public string Description { get; set; }
@@ -23,7 +23,7 @@
             }
         }
 
-        public Setting(SettingName name, string value, string defaultValue, string description, bool userCanEdit)
+        public Preference(PreferenceName name, string value, string defaultValue, string description, bool userCanEdit)
         {
             Name = name;
             Value = value;
