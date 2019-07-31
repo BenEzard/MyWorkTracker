@@ -3,14 +3,11 @@
     public class AppEventArgs
     {
         public AppAction Action { get; set; }
-        public WorkItem CurrentWorkItemSelection { get; set; }
-        
-        public Preference Setting { get; set; }
+        public WorkItem CurrentWorkItemSelection { get; set; } = null;
 
-        public JournalEntry JournalEntry { get; set; }
-        public JournalEntry JournalEntry2 { get; set; }
-
-        public string StringValue { get; set; }
+        public object Object1 { get; set; } = null;
+        public object Object2 { get; set; } = null;
+        public object Object3 { get; set; } = null;
 
         public AppEventArgs(AppAction action, WorkItem current)
         {
@@ -18,26 +15,54 @@
             CurrentWorkItemSelection = current;
         }
 
-        public AppEventArgs(AppAction action, Preference setting, string newValue)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="action"></param>
+        /// <param name="current"></param>
+        /// <param name="object1"></param>
+        public AppEventArgs(AppAction action, WorkItem current, object object1)
         {
             Action = action;
-            Setting = setting;
-            StringValue = newValue;
+            CurrentWorkItemSelection = current;
+            Object1 = object1;
         }
 
-        public AppEventArgs(AppAction action, WorkItem currentWorkItem, JournalEntry currentJournalEntry)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="action"></param>
+        /// <param name="current"></param>
+        /// <param name="object1"></param>
+        /// <param name="object2"></param>
+        public AppEventArgs(AppAction action, WorkItem current, object object1, object object2)
         {
             Action = action;
-            CurrentWorkItemSelection = currentWorkItem;
-            JournalEntry = currentJournalEntry;
+            CurrentWorkItemSelection = current;
+            Object1 = object1;
+            Object2 = object2;
         }
 
-        public AppEventArgs(AppAction action, WorkItem currentWorkItem, JournalEntry oldEntry, JournalEntry newEntry)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="action"></param>
+        /// <param name="object1"></param>
+        /// <param name="object2"></param>
+        public AppEventArgs(AppAction action, object object1, object object2)
         {
             Action = action;
-            CurrentWorkItemSelection = currentWorkItem;
-            JournalEntry = oldEntry;
-            JournalEntry2 = newEntry;
+            Object1 = object1;
+            Object2 = object2;
         }
+
+        public AppEventArgs(AppAction action, object object1, object object2, object object3)
+        {
+            Action = action;
+            Object1 = object1;
+            Object2 = object2;
+            Object3 = object3;
+        }
+
     }
 }

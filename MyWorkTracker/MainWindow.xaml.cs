@@ -30,9 +30,11 @@ namespace MyWorkTracker
             _model.appEvent += AppEventListener;
 
             // Populate the Overview (the Active tab)
-            Overview.ItemsSource = _controller.GetWorkItems(true); //_model.GetWorkItems();
+            //Overview.ItemsSource = _controller.GetWorkItems(true); //_model.GetWorkItems();
+            Overview.ItemsSource = _model.GetActiveWorkItems();
             // Populate the Closed tab
-            ClosedListView.ItemsSource = _controller.GetWorkItems(false);  //_model.GetWorkItems();
+            //ClosedListView.ItemsSource = _controller.GetWorkItems(false);  //_model.GetWorkItems();
+            ClosedListView.ItemsSource = _model.GetClosedWorkItems();  //_model.GetWorkItems();
 
             WorkItemStatus.ItemsSource = _model.GetWorkItemStatuses();
 
@@ -78,7 +80,7 @@ namespace MyWorkTracker
         {
             switch(args.Action)
             {
-                case AppAction.CREATE_NEW_WORK_ITEM:
+                case AppAction.CREATE_WORK_ITEM:
                     WorkItemStatus.SelectedItem = _controller.GetWorkItemStatus(_model.SelectedWorkItem.Status);
                     _model.IsBindingLoading = false;
                     SelectedTaskTitleField.Focus();
@@ -87,8 +89,26 @@ namespace MyWorkTracker
                     break;
 
                 case AppAction.SELECT_WORK_ITEM:
+                    // Because the UI is divided into two lists (active and closed), we need to toggle the selections of both lists.
+                    // If the selection is Active, then we want to clear the Closed list selections.
+                    // If the selection is Closed, then we want to clear the Active list selections.
+                    WorkItem wi = args.CurrentWorkItemSelection;
+                    if (wi.IsConsideredActive)
+                    {
+                        ClosedListView.SelectedItem = null;
+                        // If an item isn't selected on the Overview (and is in it), then select it now.
+                        if ((Overview.SelectedItem == null) && (Overview.Items.Contains(wi)))
+                        {
+                            Overview.SelectedItem = wi;
+                        }
+                    }
+                    else
+                    {
+                        Overview.SelectedItem = null;
+                    }
+
                     // Set to the Status of the selected WorkItem
-                    WorkItemStatus.SelectedItem = _controller.GetWorkItemStatus(args.CurrentWorkItemSelection.Status);
+                    WorkItemStatus.SelectedItem = _controller.GetWorkItemStatus(wi.Status);
                     DueInDaysTextField.Text = DateMethods.GenerateDateDifferenceLabel(DateTime.Now, _model.SelectedWorkItem.DueDate, true);
 
                     // Check to see if the Journal entries for this Work Item have been loaded
@@ -104,6 +124,7 @@ namespace MyWorkTracker
                     break;
 
                 case AppAction.WORK_ITEM_ADDED:
+
                     SaveButton.Background = Brushes.SteelBlue;
                     SaveButton.Content = "Save";
                     break;
@@ -123,10 +144,21 @@ namespace MyWorkTracker
                     if (isCompletedStatus)
                     {
                         WorkItemProgressSlider.IsEnabled = false;
+                      //  _model.SwapList(true, args.CurrentWorkItemSelection);
+                        //_model.SetSelectedWorkItem(null);
                     }
                     else
                     {
+//                        _model.SwapList(false, args.CurrentWorkItemSelection);
+//                        _model.SetSelectedWorkItem(args.CurrentWorkItemSelection);
+
+                        // If it's Active (i.e. not Completed) and at 100% progress then set it back to 95%
+                        // (This is to prevent a Completed-then-Active being auto-set back to Completed when loaded again)
                         WorkItemProgressSlider.IsEnabled = true;
+                        if (args.CurrentWorkItemSelection.Completed == 100)
+                        {
+                            args.CurrentWorkItemSelection.Completed = MWTModel.CLOSED_TO_ACTIVE_AMOUNT;
+                        }
                     }
 
                     break;
@@ -153,31 +185,32 @@ namespace MyWorkTracker
                     }
                     break;
 
-                case AppAction.APPLICATION_SETTING_CHANGED:
+                case AppAction.PREFERENCE_CHANGED:
                     // Intentionally there is no in-built protection to stop a user from editing a non-editable value. (Keeping my options open)
 
                     // Change in memory.
-                    _model.GetAppSettingCollection()[args.Setting.Name].Value = args.StringValue;
+                    Enum.TryParse(args.Object1.ToString(), out PreferenceName preferenceName);
+                    _model.GetAppPreferenceCollection()[preferenceName].Value = args.Object2.ToString();
 
                     // Change in storage.
-                    _controller.UpdateApplicationPreferenceDB(args.Setting.Name, args.StringValue);
+                    _controller.UpdateAppPreference(preferenceName, args.Object3.ToString());
 
                     break;
 
                 case AppAction.JOURNAL_ENTRY_DELETED:
-                    _controller.DeleteDBJournalEntry(args.JournalEntry);
+                    _controller.DeleteDBJournalEntry((JournalEntry)args.Object1);
                     break;
 
                 case AppAction.JOURNAL_ENTRY_ADDED:
-                    _controller.InsertDBJournalEntry(args.CurrentWorkItemSelection.Meta.WorkItem_ID, args.JournalEntry);
-                    _controller.AddJournalEntry(args.CurrentWorkItemSelection, args.JournalEntry);
+                    _controller.InsertDBJournalEntry(args.CurrentWorkItemSelection.Meta.WorkItem_ID, (JournalEntry)args.Object1);
+                    _controller.AddJournalEntry(args.CurrentWorkItemSelection, (JournalEntry)args.Object1);
                     break;
 
                 case AppAction.JOURNAL_ENTRY_EDITED:
-                    _controller.UpdateDBJournalEntry(args.JournalEntry2);
-                    int indexOf = _model.SelectedWorkItem.Journals.IndexOf(args.JournalEntry);
-                    _model.SelectedWorkItem.Journals.Remove(args.JournalEntry);
-                    _model.SelectedWorkItem.Journals.Insert(indexOf, args.JournalEntry2);
+                    _controller.UpdateDBJournalEntry((JournalEntry)args.Object2);
+                    int indexOf = _model.SelectedWorkItem.Journals.IndexOf((JournalEntry)args.Object1);
+                    _model.SelectedWorkItem.Journals.Remove((JournalEntry)args.Object1);
+                    _model.SelectedWorkItem.Journals.Insert(indexOf, (JournalEntry)args.Object2);
                     break;
             }
 
@@ -264,17 +297,21 @@ namespace MyWorkTracker
 
         private void ActiveWorkItemSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
+            // If the application is in 'add mode' (ADD_WORK_ITEM) then don't allow any selections.
             if (_model.IsApplicationInAddMode)
             {
                 SelectedTaskTitleField.Focus();
             }
-            // If the application is in 'add mode' (ADD_WORK_ITEM) then don't allow any selections.
             else
             {
                 UpdateWorkItemDBAsRequired();
                 Overview.Background = Brushes.White;
                 WorkItem wi = (WorkItem)(sender as ListBox).SelectedItem;
-                _model.SetSelectedWorkItem(wi);
+                // The ActiveWorkItemSelectionChanged may be set to null (if a Closed selection is made), so need to handle that here.
+                if (wi != null)
+                {
+                    _model.SetSelectedWorkItem(wi);
+                }
             }
         }
 
@@ -328,35 +365,39 @@ namespace MyWorkTracker
         {
             if (_model.SelectedWorkItem != null)
             {
-                DateTime currentDueDate = _model.SelectedWorkItem.DueDate;
-                var ddw = new DueDateDialog(currentDueDate);
-                ddw.Owner = this;
-                ddw.ShowDialog();
+                WorkItem selectedWI = _model.SelectedWorkItem;
+                DateTime currentDueDate = selectedWI.DueDate;
+                var ddDialog = new DueDateDialog(currentDueDate);
+                ddDialog.Owner = this;
+                ddDialog.ShowDialog();
 
-                if (ddw.WasDialogSubmitted)
+                if (ddDialog.WasDialogSubmitted)
                 {
-                    if (ddw.NewDateTime.Equals(currentDueDate))
+                    if (ddDialog.NewDateTime.Equals(currentDueDate))
                     {
                         // Do nothing
                     }
                     else
                     {
+                        int rowID = -1;
                         // If the DueDate (from database) has been set within x mins of now, UPDATE the record instead of INSERTING it.
-                        int minutesSinceLastSet = DateTime.Now.Subtract(_model.SelectedWorkItem.Meta.DueDateUpdateDateTime).Minutes;
+                        int minutesSinceLastSet = DateTime.Now.Subtract(selectedWI.Meta.DueDateUpdateDateTime).Minutes;
                         if (minutesSinceLastSet < Convert.ToInt32(_controller.GetMWTModel().GetAppSettingValue(PreferenceName.DUE_DATE_SET_WINDOW_MINUTES)))
                         {
                             // Update
-                            _controller.UpdateDBDueDate(_model.SelectedWorkItem, ddw.NewDateTime, ddw.ChangeReason);
+                            rowID = _controller.UpdateDBDueDate(selectedWI, ddDialog.NewDateTime, ddDialog.ChangeReason);
                         }
                         else
                         {
                             // Insert
-                            _controller.InsertDBDueDate(_model.SelectedWorkItem, ddw.NewDateTime, ddw.ChangeReason);
+                            rowID = _controller.InsertDBDueDate(selectedWI, ddDialog.NewDateTime, ddDialog.ChangeReason);
                         }
 
                         // Update the update/record change time.
-                        _model.SelectedWorkItem.DueDate = ddw.NewDateTime;
-                        _model.SelectedWorkItem.Meta.DueDateUpdateDateTime = DateTime.Now;
+                        selectedWI.Meta.DueDate_ID = rowID;
+                        selectedWI.Meta.DueDateUpdateDateTime = DateTime.Now;
+                        selectedWI.DueDate = ddDialog.NewDateTime;
+                        selectedWI.Meta.DueDateUpdateDateTime = DateTime.Now;
 
                         // Refresh the time label
                         DueInDaysTextField.Text = DateMethods.GenerateDateDifferenceLabel(DateTime.Now, _model.SelectedWorkItem.DueDate, true);
@@ -377,7 +418,7 @@ namespace MyWorkTracker
 
             if (_model.GetAppSettingValue(PreferenceName.SAVE_WINDOW_COORDS_ON_EXIT).Equals("1")) {
                 string coords = $"{this.Left},{this.Top},{this.Width},{this.Height}";
-                _model.FireUpdateAppSetting(PreferenceName.APPLICATION_WINDOW_COORDS, coords);
+                _model.FireUpdateAppPreference(PreferenceName.APPLICATION_WINDOW_COORDS, coords);
             }
         }
 
@@ -453,7 +494,7 @@ namespace MyWorkTracker
                 {
                     if ((journalDialog.DontConfirmFutureDeletes.HasValue) && (journalDialog.DontConfirmFutureDeletes.Value))
                     {
-                        _model.FireUpdateAppSetting(PreferenceName.CONFIRM_JOURNAL_DELETION, "0");
+                        _model.FireUpdateAppPreference(PreferenceName.CONFIRM_JOURNAL_DELETION, "0");
                     }
                     _model.FireDeleteJournalEntry(_model.SelectedWorkItem, je);
                 }
@@ -480,13 +521,12 @@ namespace MyWorkTracker
         private void SettingsButton_Click(object sender, RoutedEventArgs e)
         {
 
-            foreach (PreferenceName n in _model.GetAppSettingCollection().Keys)
+            foreach (PreferenceName n in _model.GetAppPreferenceCollection().Keys)
             {
-                Preference s = _model.GetAppSettingCollection()[n];
+                Preference s = _model.GetAppPreferenceCollection()[n];
             }
 
-
-            var sDialog = new SettingsDialog(_model.GetAppSettingCollection());
+            var sDialog = new SettingsDialog(_model.GetAppPreferenceCollection());
             sDialog.Owner = this;
             sDialog.ShowDialog();
 
@@ -496,20 +536,17 @@ namespace MyWorkTracker
                 if (sDialog.WasSaveWindowCoordinatesSelected)
                 {
                     string coords = $"{this.Left},{this.Top},{this.Width},{this.Height}";
-                    _model.FireUpdateAppSetting(PreferenceName.APPLICATION_WINDOW_COORDS, coords);
+                    _model.FireUpdateAppPreference(PreferenceName.APPLICATION_WINDOW_COORDS, coords);
                 }
 
                 Dictionary<PreferenceName, string> settingChanges = sDialog.GetChanges;
                 foreach(PreferenceName name in settingChanges.Keys)
                 {
-                    _model.FireUpdateAppSetting(name, settingChanges[name]);
+                    Console.WriteLine($"---> Fire updated for Setting: {name} = {settingChanges[name]}");
+                    _model.FireUpdateAppPreference(name, settingChanges[name]);
                 }
             }
         }
 
-/*        private void ClosedListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-
-        }*/
     }
 }

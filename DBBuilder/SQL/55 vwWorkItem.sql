@@ -1,6 +1,7 @@
 ﻿CREATE VIEW vwWorkItem AS 
 SELECT WorkItem.WorkItem_ID, 
 	WorkItem.TaskTitle, 
+	WorkItem.CreationDateTime,
 	WorkItem.TaskDescription, 
 	WorkItem.Complete, 
 	DueDate.DueDateTime,

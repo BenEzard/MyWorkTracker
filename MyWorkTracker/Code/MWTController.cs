@@ -58,7 +58,9 @@ namespace MyWorkTracker.Code
             wi.DueDate = dueDate;
 
             // Get the default active Status (note due to DB constraints there can only be one).
-            wi.Status = GetWorkItemStatuses(true, true).ToArray()[0].Status;
+            WorkItemStatus wis = GetWorkItemStatuses(true, true).ToArray()[0];
+            wi.Status = wis.Status;
+            wi.IsConsideredActive = wis.IsConsideredActive;
 
             _model.FireCreateNewWorkItem(wi);
         }
@@ -99,11 +101,13 @@ namespace MyWorkTracker.Code
             return _model;
         }
 
-        public void SetWorkItemStatus(WorkItem wi, WorkItemStatus wis)
+        public void SetWorkItemStatus(WorkItem wi, WorkItemStatus newWorkItemStatus)
         {
-            wi.Status = wis.Status;
+            // TODO: Commented out
+            //Enum.TryParse(wi.Status, out WorkItemStatus oldStatus);
+            wi.Status = newWorkItemStatus.Status;
             wi.Meta.WorkItemStatusNeedsUpdate = true;
-            _model.FireWorkItemStatusChange(wi, wis);
+            _model.FireWorkItemStatusChange(wi, newWorkItemStatus);
         }
 
         public WorkItemStatus GetWorkItemStatus(string status)
@@ -199,6 +203,7 @@ namespace MyWorkTracker.Code
                                 WorkItem wi = new WorkItem();
                                 wi.Meta.WorkItem_ID = Convert.ToInt32(reader["WorkItem_ID"]);
                                 wi.Title = (string)reader["TaskTitle"];
+                                wi.CreateDateTime = DateTime.Parse(reader["CreationDateTime"].ToString());
                                 if (reader["TaskDescription"].GetType() != typeof(DBNull))
                                     wi.TaskDescription = (string)reader["TaskDescription"];
                                 wi.Completed = Convert.ToInt32(reader["Complete"]);
@@ -399,7 +404,7 @@ namespace MyWorkTracker.Code
             }
         }
 
-        public bool UpdateApplicationPreferenceDB(PreferenceName name, string value)
+        public bool UpdateAppPreference(PreferenceName name, string value)
         {
             bool rValue = false;
             int result = -1;
@@ -420,7 +425,7 @@ namespace MyWorkTracker.Code
             if (result > 0)
             {
                 // Update in memory
-                var settings = _model.GetAppSettingCollection();
+                var settings = _model.GetAppPreferenceCollection();
                 settings[name].Value = value;
                 rValue = true;
             }
@@ -456,7 +461,6 @@ namespace MyWorkTracker.Code
 
                     // Save the Due Date
                     int dueDateID = InsertDBDueDate(wi, wi.DueDate, "Initial WorkItem created.");
-                    wi.Meta.DueDate_ID = dueDateID;
 
                     // Save the Status
                     InsertDBWorkItemStatus(wi, wi.Status);
@@ -502,7 +506,7 @@ namespace MyWorkTracker.Code
         /// </summary>
         /// <param name="workItem"></param>
         /// <param name="newDueDate"></param>
-        /// <param name="changeReason"></param>
+        /// <param name="changeReason">The reason the user gives for the due date change.</param>
         /// <returns></returns>
         public int InsertDBDueDate(WorkItem workItem, DateTime newDueDate, string changeReason)
         {
@@ -527,7 +531,8 @@ namespace MyWorkTracker.Code
                 }
                 connection.Close();
             }
-            _model.FireDueDateChanged(workItem);
+
+            _model.FireDueDateChanged(workItem, newDueDate);
             return rowID;
         }
 
@@ -559,8 +564,7 @@ namespace MyWorkTracker.Code
                 connection.Close();
             }
 
-            workItem.Meta.DueDateUpdateDateTime = DateTime.Now;
-            _model.FireDueDateChanged(workItem);
+            _model.FireDueDateChanged(workItem, newDueDate);
 
             return workItem.Meta.DueDate_ID;
         }

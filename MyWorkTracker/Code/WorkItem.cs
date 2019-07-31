@@ -37,7 +37,7 @@ namespace MyWorkTracker.Code
         /// </summary>
         /// <param name="title"></param>
         /// <param name="description"></param>
-        /// /// <param name="status"></param>
+        /// <param name="status"></param>
         /// <param name="amountComplete"></param>
         /// <param name="createDateTime"></param>
         /// <param name="dueDateTime"></param>

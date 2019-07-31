@@ -7,15 +7,26 @@ namespace MyWorkTracker.Code
 {
     public class MWTModel : INotifyPropertyChanged
     {
+        // TODO: Put this in as a Preference.
+        /// <summary>
+        /// The amount of Completion % that should be auto-set when a WorkItem is moved from Completed back to Active. (Note it cannot be 100!).
+        /// </summary>
+        public const int CLOSED_TO_ACTIVE_AMOUNT = 50;
+
         public const string DatabaseFile = @"\Data\MyWorkTracker.db";
         public delegate void AppEventHandler(object obj, AppEventArgs e);
         public event AppEventHandler appEvent;
         public event PropertyChangedEventHandler PropertyChanged;
 
         /// <summary>
-        /// This collection is the key data of the application; a list of WorkItems.
+        /// This collection is the key data of the application; a list of active WorkItems.
         /// </summary>
-        private ObservableCollection<WorkItem> _workItems = new ObservableCollection<WorkItem>();
+        private ObservableCollection<WorkItem> _activeWorkItems = new ObservableCollection<WorkItem>();
+
+        /// <summary>
+        /// This collection is the key data of the application; a list of closed WorkItems.
+        /// </summary>
+        private ObservableCollection<WorkItem> _closedWorkItems = new ObservableCollection<WorkItem>();
 
         /// <summary>
         /// This variable keeps track of all of the Statuses that a WorkItem can take.
@@ -118,7 +129,7 @@ namespace MyWorkTracker.Code
 
         }
 
-        public Dictionary<PreferenceName, Preference> GetAppSettingCollection()
+        public Dictionary<PreferenceName, Preference> GetAppPreferenceCollection()
         {
             return _appSettings;
         }
@@ -140,7 +151,10 @@ namespace MyWorkTracker.Code
         /// /// <param name="select">Should the WorkItem be selected?</param>
         public void AddWorkItem(WorkItem workItem, bool notifyListeners, bool select)
         {
-            _workItems.Add(workItem);
+            if (workItem.IsConsideredActive)
+                _activeWorkItems.Add(workItem);
+            else
+                _closedWorkItems.Add(workItem);
 
             if (notifyListeners)
             {
@@ -156,7 +170,63 @@ namespace MyWorkTracker.Code
 
         public ObservableCollection<WorkItem> GetWorkItems()
         {
-            return _workItems;
+            return _activeWorkItems;
+        }
+        
+        // Maybe it's failing because once you change their state they are no longer the same???
+        internal void SwapList(bool activeToClosed, int workItemID)
+        {
+            WorkItem wi = GetWorkItemByID(workItemID);
+            if (activeToClosed)
+            {
+                _activeWorkItems.Remove(wi);
+                _closedWorkItems.Add(wi);
+
+            } 
+            else
+            {
+                _closedWorkItems.Remove(wi);
+                _activeWorkItems.Add(wi);
+            }
+        }
+
+        private WorkItem GetWorkItemByID(int id)
+        {
+            WorkItem rValue = null;
+
+            foreach (WorkItem wi in _activeWorkItems)
+            {
+                if (wi.Meta.WorkItem_ID == id)
+                {
+                    rValue = wi;
+                    break;
+                }
+            }
+
+            if (rValue == null)
+            {
+                foreach (WorkItem wi in _closedWorkItems)
+                {
+                    if (wi.Meta.WorkItem_ID == id)
+                    {
+                        rValue = wi;
+                        break;
+                    }
+                }
+
+            }
+
+            return rValue;
+        }
+
+        public ObservableCollection<WorkItem> GetActiveWorkItems()
+        {
+            return _activeWorkItems;
+        }
+
+        public ObservableCollection<WorkItem> GetClosedWorkItems()
+        {
+            return _closedWorkItems;
         }
 
         /// <summary>
@@ -196,7 +266,11 @@ namespace MyWorkTracker.Code
             return rValue;
         }
 
-        public void FireCreateNewWorkItem(WorkItem wi)
+        /// <summary>
+        /// Fire a notification that a new Work Item is being created (but has not yet been completed).
+        /// </summary>
+        /// <param name="workItem"></param>
+        public void FireCreateNewWorkItem(WorkItem workItem)
         {
             IsBindingLoading = true;
 
@@ -204,9 +278,9 @@ namespace MyWorkTracker.Code
             {
                 _previouslySelectedWorkItem = _selectedWorkItem;
             }
-            SelectedWorkItem = wi;
+            SelectedWorkItem = workItem;
 
-            var eventArgs = new AppEventArgs(AppAction.CREATE_NEW_WORK_ITEM, wi);
+            var eventArgs = new AppEventArgs(AppAction.CREATE_WORK_ITEM, workItem);
             appEvent?.Invoke(this, eventArgs);
         }
 
@@ -214,19 +288,21 @@ namespace MyWorkTracker.Code
         /// Fire a notification that a Work Item Status has changed for a WorkItem.
         /// </summary>
         /// <param name="wi"></param>
-        public void FireWorkItemStatusChange(WorkItem wi, WorkItemStatus wis)
+        /// <param name="newStatus"></param>
+        public void FireWorkItemStatusChange(WorkItem wi, WorkItemStatus newStatus)
         {
-            var eventArgs = new AppEventArgs(AppAction.WORK_ITEM_STATUS_CHANGED, wi);
+            var eventArgs = new AppEventArgs(AppAction.WORK_ITEM_STATUS_CHANGED, wi, newStatus);
             appEvent?.Invoke(this, eventArgs);
         }
 
         /// <summary>
         /// Fire a notification that the due date has changed for a WorkItem.
         /// </summary>
-        /// <param name="wi"></param>
-        public void FireDueDateChanged(WorkItem wi)
+        /// <param name="workItem"></param>
+        /// <param name="newDateTime">The new DateTime that has been set.</param>
+        public void FireDueDateChanged(WorkItem workItem, DateTime newDateTime)
         {
-            var eventArgs = new AppEventArgs(AppAction.DUE_DATE_CHANGED, wi);
+            var eventArgs = new AppEventArgs(AppAction.DUE_DATE_CHANGED, workItem, newDateTime);
             appEvent?.Invoke(this, eventArgs);
         }
 
@@ -251,12 +327,13 @@ namespace MyWorkTracker.Code
         /// <summary>
         /// Set the mode the Application is in.
         /// </summary>
-        /// <param name="mode"></param>
-        public void SetApplicationMode(DataEntryMode mode)
+        /// <param name="newMode"></param>
+        public void SetApplicationMode(DataEntryMode newMode)
         {
-            _appMode = mode;
+            DataEntryMode oldMode = _appMode;
+            _appMode = newMode;
             OnPropertyChanged("");
-            var eventArgs = new AppEventArgs(AppAction.SET_APPLICATION_MODE, null);
+            var eventArgs = new AppEventArgs(AppAction.SET_APPLICATION_MODE, oldMode, newMode);
             appEvent?.Invoke(this, eventArgs);
         }
 
@@ -274,9 +351,10 @@ namespace MyWorkTracker.Code
         /// </summary>
         /// <param name="name"></param>
         /// <param name="newValue"></param>
-        public void FireUpdateAppSetting(PreferenceName name, string newValue)
+        public void FireUpdateAppPreference(PreferenceName name, string newValue)
         {
-            var eventArgs = new AppEventArgs(AppAction.APPLICATION_SETTING_CHANGED, _appSettings[name], newValue);
+            // PREFERENCE_CHANGED: PreferenceName, oldValue, newValue
+            var eventArgs = new AppEventArgs(AppAction.PREFERENCE_CHANGED, name, _appSettings[name], newValue);
             appEvent?.Invoke(this, eventArgs);
         }
 
