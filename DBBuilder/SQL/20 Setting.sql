@@ -9,7 +9,7 @@
 INSERT INTO Setting ([Name], [Value], DefaultValue, [Description], UserCanEdit) 
 VALUES	/* Application Values - Non configurable */
 		('APPLICATION_NAME', 'MyWorkTracker', 'MyWorkTracker', 'The name of the Application', 'N'),
-		('APPLICATION_VERSION', '0.3.0', '0.3.0', 'The version number of the Application', 'N'),
+		('APPLICATION_VERSION', '0.2.0', '0.2.0', 'The version number of the Application', 'N'),
 
 		/* Application Values - Configurable */
 		('APPLICATION_WINDOW_COORDS', '100,0,750,750', '100,0,750,750', 'The window''s location and size (left, top, width, height)', 'Y'),

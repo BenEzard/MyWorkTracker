@@ -16,4 +16,4 @@ About seven billion greeting cards are purchased worldwide every year, with annu
 By purchasing our cards you will help fund gifts that support community, education, good food, good health, safe water and sanitation in multiple countries around the world.');
 
 INSERT INTO WorkItem (TaskTitle, TaskDescription, Complete) VALUES
-	('Another Work Item', 'Some example text', 100);
+	('A Closed Work Item', 'Some example text', 100);

@@ -174,9 +174,8 @@ namespace MyWorkTracker.Code
         }
         
         // Maybe it's failing because once you change their state they are no longer the same???
-        internal void SwapList(bool activeToClosed, int workItemID)
+        internal void SwapList(bool activeToClosed, WorkItem wi)
         {
-            WorkItem wi = GetWorkItemByID(workItemID);
             if (activeToClosed)
             {
                 _activeWorkItems.Remove(wi);
@@ -188,35 +187,6 @@ namespace MyWorkTracker.Code
                 _closedWorkItems.Remove(wi);
                 _activeWorkItems.Add(wi);
             }
-        }
-
-        private WorkItem GetWorkItemByID(int id)
-        {
-            WorkItem rValue = null;
-
-            foreach (WorkItem wi in _activeWorkItems)
-            {
-                if (wi.Meta.WorkItem_ID == id)
-                {
-                    rValue = wi;
-                    break;
-                }
-            }
-
-            if (rValue == null)
-            {
-                foreach (WorkItem wi in _closedWorkItems)
-                {
-                    if (wi.Meta.WorkItem_ID == id)
-                    {
-                        rValue = wi;
-                        break;
-                    }
-                }
-
-            }
-
-            return rValue;
         }
 
         public ObservableCollection<WorkItem> GetActiveWorkItems()
@@ -289,9 +259,10 @@ namespace MyWorkTracker.Code
         /// </summary>
         /// <param name="wi"></param>
         /// <param name="newStatus"></param>
-        public void FireWorkItemStatusChange(WorkItem wi, WorkItemStatus newStatus)
+        /// <param name="oldStatus"></param>
+        public void FireWorkItemStatusChange(WorkItem wi, WorkItemStatus newStatus, WorkItemStatus oldStatus)
         {
-            var eventArgs = new AppEventArgs(AppAction.WORK_ITEM_STATUS_CHANGED, wi, newStatus);
+            var eventArgs = new AppEventArgs(AppAction.WORK_ITEM_STATUS_CHANGED, wi, newStatus, oldStatus);
             appEvent?.Invoke(this, eventArgs);
         }
 

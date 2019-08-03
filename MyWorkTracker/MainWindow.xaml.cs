@@ -90,13 +90,16 @@ namespace MyWorkTracker
 
                 case AppAction.SELECT_WORK_ITEM:
                     // Because the UI is divided into two lists (active and closed), we need to toggle the selections of both lists.
-                    // If the selection is Active, then we want to clear the Closed list selections.
-                    // If the selection is Closed, then we want to clear the Active list selections.
+
                     WorkItem wi = args.CurrentWorkItemSelection;
+                    Console.WriteLine($"Current selection is #{wi.Meta.WorkItem_ID}: {wi.Title}; {wi.Status} (active = {wi.IsConsideredActive})");
+
+                    // The Work Item selection is of an 'Active' status.
+                    // If the selection is Active, then we want to clear the Closed list selections.
                     if (wi.IsConsideredActive)
                     {
                         ClosedListView.SelectedItem = null;
-                        // If an item isn't selected on the Overview (and is in it), then select it now.
+                        // If an item isn't selected on the Overview list, and is in the list, then select it now.
                         if ((Overview.SelectedItem == null) && (Overview.Items.Contains(wi)))
                         {
                             Overview.SelectedItem = wi;
@@ -104,14 +107,22 @@ namespace MyWorkTracker
                     }
                     else
                     {
+                        Console.WriteLine($"A");
+                        // The Work Item selection is of a 'Closed' status.
+                        // If the selection is Closed, then we want to clear the Active list selections.
                         Overview.SelectedItem = null;
+                        if ((ClosedListView.SelectedItem == null) && (ClosedListView.Items.Contains(wi)))
+                        {
+                            Console.WriteLine($"A2");
+                            ClosedListView.SelectedItem = wi;
+                        }
                     }
 
-                    // Set to the Status of the selected WorkItem
+                    // Set the Work Item Status & the DueInDays control to the values of the selected WorkItem
                     WorkItemStatus.SelectedItem = _controller.GetWorkItemStatus(wi.Status);
                     DueInDaysTextField.Text = DateMethods.GenerateDateDifferenceLabel(DateTime.Now, _model.SelectedWorkItem.DueDate, true);
 
-                    // Check to see if the Journal entries for this Work Item have been loaded
+                    // Check to see if the Journal entries for this Work Item have been loaded. Load them if not.
                     if (_model.SelectedWorkItem.Meta.AreJournalItemsLoaded == false)
                     {
                         _controller.LoadJournalEntries(_model.SelectedWorkItem);
@@ -130,36 +141,44 @@ namespace MyWorkTracker
                     break;
 
                 case AppAction.WORK_ITEM_STATUS_CHANGED:
-                    // Check to see if the Status has been set to a 'completed' type. If so, disable the progress bar.
-                    bool isCompletedStatus = false;
-                    foreach (WorkItemStatus wis in _controller.GetWorkItemStatuses(false))
+                    // Before processing any actions, check to see if Binding is loading.
+                    // If it is, then do nothing.
+                    if (_model.IsBindingLoading == false)
                     {
-                        if (wis.Status.Equals(args.CurrentWorkItemSelection.Status))
+                        // Unpack the event
+                        WorkItem wi2 = args.CurrentWorkItemSelection;
+                        WorkItemStatus newWorkItemStatus = (WorkItemStatus)args.Object1;
+                        WorkItemStatus oldWorkItemStatus = (WorkItemStatus)args.Object2;
+
+                        // Check to see if the change in status is a change between active/closed
+                        if (newWorkItemStatus.IsConsideredActive != oldWorkItemStatus.IsConsideredActive)
                         {
-                            isCompletedStatus = true;
-                            break;
+                            // Active-to-Closed
+                            // If the status is not considered to be active, then disable the progress slider.
+                            if (newWorkItemStatus.IsConsideredActive == false)
+                            {
+                                WorkItemProgressSlider.IsEnabled = false;
+                                _model.SwapList(true, wi2);
+                                //_model.SetSelectedWorkItem(null);
+                            }
+                            else // Closed-to-Active
+                            {
+                                _model.SwapList(false, wi2);
+                                OverviewAreaTabs.SelectedIndex = 0;
+                                // If it's Active (i.e. not Completed) and at 100% progress then set it back to 95%
+                                // (This is to prevent a Completed-then-Active being auto-set back to Completed when loaded again)
+                                WorkItemProgressSlider.IsEnabled = true;
+                                if (wi2.Completed == 100)
+                                {
+                                    wi2.Completed = MWTModel.CLOSED_TO_ACTIVE_AMOUNT;
+                                }
+                            }
+                        } else
+                        {
+                            // do nothing
                         }
                     }
 
-                    if (isCompletedStatus)
-                    {
-                        WorkItemProgressSlider.IsEnabled = false;
-                      //  _model.SwapList(true, args.CurrentWorkItemSelection);
-                        //_model.SetSelectedWorkItem(null);
-                    }
-                    else
-                    {
-//                        _model.SwapList(false, args.CurrentWorkItemSelection);
-//                        _model.SetSelectedWorkItem(args.CurrentWorkItemSelection);
-
-                        // If it's Active (i.e. not Completed) and at 100% progress then set it back to 95%
-                        // (This is to prevent a Completed-then-Active being auto-set back to Completed when loaded again)
-                        WorkItemProgressSlider.IsEnabled = true;
-                        if (args.CurrentWorkItemSelection.Completed == 100)
-                        {
-                            args.CurrentWorkItemSelection.Completed = MWTModel.CLOSED_TO_ACTIVE_AMOUNT;
-                        }
-                    }
 
                     break;
 
@@ -279,7 +298,6 @@ namespace MyWorkTracker
         private void UpdateWorkItemDBAsRequired()
         {
             WorkItem selectedWorkItem = _model.SelectedWorkItem;
-
             // Ensure that a WorkItem has been selected.
             if ((selectedWorkItem != null) && (_model.GetApplicationMode() == DataEntryMode.EDIT))
             {
@@ -414,7 +432,9 @@ namespace MyWorkTracker
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             if (_model.SelectedWorkItem != null)
+            {
                 UpdateWorkItemDBAsRequired();
+            }
 
             if (_model.GetAppSettingValue(PreferenceName.SAVE_WINDOW_COORDS_ON_EXIT).Equals("1")) {
                 string coords = $"{this.Left},{this.Top},{this.Width},{this.Height}";
@@ -542,7 +562,6 @@ namespace MyWorkTracker
                 Dictionary<PreferenceName, string> settingChanges = sDialog.GetChanges;
                 foreach(PreferenceName name in settingChanges.Keys)
                 {
-                    Console.WriteLine($"---> Fire updated for Setting: {name} = {settingChanges[name]}");
                     _model.FireUpdateAppPreference(name, settingChanges[name]);
                 }
             }

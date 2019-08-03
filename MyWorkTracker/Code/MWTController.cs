@@ -101,13 +101,19 @@ namespace MyWorkTracker.Code
             return _model;
         }
 
+        /// <summary>
+        /// Sets the WorkItemStatus on a WorkItem.
+        /// Also sets the IsConsideredActive convenience variable and flags the WorkItemStatus as needing an update.
+        /// </summary>
+        /// <param name="wi"></param>
+        /// <param name="newWorkItemStatus"></param>
         public void SetWorkItemStatus(WorkItem wi, WorkItemStatus newWorkItemStatus)
         {
-            // TODO: Commented out
-            //Enum.TryParse(wi.Status, out WorkItemStatus oldStatus);
+            WorkItemStatus oldStatus = GetWorkItemStatus(wi.Status);
             wi.Status = newWorkItemStatus.Status;
             wi.Meta.WorkItemStatusNeedsUpdate = true;
-            _model.FireWorkItemStatusChange(wi, newWorkItemStatus);
+            wi.IsConsideredActive = newWorkItemStatus.IsConsideredActive;
+            _model.FireWorkItemStatusChange(wi, newWorkItemStatus, oldStatus);
         }
 
         public WorkItemStatus GetWorkItemStatus(string status)
@@ -282,7 +288,7 @@ namespace MyWorkTracker.Code
                     // Get the identity value
                     cmd.CommandText = "SELECT last_insert_rowid()";
                     workItemStatusID = (int)(Int64)cmd.ExecuteScalar();
-                    wi.Meta.WorkItem_ID = workItemStatusID;
+                    wi.Meta.WorkItemStatus_ID = workItemStatusID;
 
                     wi.Meta.WorkItemStatusNeedsUpdate = false;
                 }
@@ -332,8 +338,6 @@ namespace MyWorkTracker.Code
             {
                 using (var cmd = new SQLiteCommand(connection))
                 {
-                    Console.WriteLine($"Updating {entry.JournalID}, {entry.Title}");
-
                     connection.Open();
                     cmd.CommandText = "UPDATE Journal SET Header=@header, Entry=@entry, ModificationDateTime=@modDateTime WHERE Journal_ID = @journalID";
                     cmd.Parameters.AddWithValue("@journalID", entry.JournalID);
@@ -475,7 +479,7 @@ namespace MyWorkTracker.Code
         /// </summary>
         /// <param name="wi"></param>
         /// <returns></returns>
-        public int UpdateDBWorkItem(WorkItem wi)
+        public void UpdateDBWorkItem(WorkItem wi)
         {
             int workItemID = -1;
             using (var connection = new SQLiteConnection(dbConnectionString))
@@ -498,7 +502,6 @@ namespace MyWorkTracker.Code
                 }
                 connection.Close();
             }
-            return workItemID;
         }
 
         /// <summary>

@@ -48,7 +48,7 @@
                 <RowDefinition Height="2*" />
             </Grid.RowDefinitions>
 
-            <TabControl>
+            <TabControl Name="OverviewAreaTabs">
                 <TabItem Header="Active">
                     <ListBox Name="Overview"
                               IsEnabled="{Binding !IsApplicationInAddMode}" SelectionChanged="ActiveWorkItemSelectionChanged"
@@ -93,7 +93,7 @@
                 </TabItem>
 
                 <TabItem Header="Closed">
-                    <ListView Name="ClosedListView" SelectionChanged="ActiveWorkItemSelectionChanged">
+                    <ListView Name="ClosedListView" SelectionChanged="ActiveWorkItemSelectionChanged" SelectionMode="Single">
                         <ListView.View>
                             <GridView>
                                 <GridViewColumn Header="Created" DisplayMemberBinding="{Binding CreateDateTime, StringFormat=\{0:dd/MM HH:mm\}}" Width="80">

@@ -7,6 +7,8 @@ namespace MyWorkTracker.Code
         public int WorkItem_ID { get; set; }
         public int DueDate_ID { get; set; }
 
+        public int WorkItemStatus_ID { get; set; }
+
         /// <summary>
         /// This keeps track of when the DueDate record was last created/updated.
         /// Used for applying the due-date-change 'grace period'
