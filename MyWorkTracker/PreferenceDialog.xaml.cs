@@ -1,4 +1,5 @@
-﻿using MyWorkTracker.Code;
+﻿using Microsoft.Win32;
+using MyWorkTracker.Code;
 using System;
 using System.Collections.Generic;
 using System.Windows;
@@ -94,6 +95,27 @@ namespace MyWorkTracker
                 ConfirmJournalCheckBox.IsChecked = true;
 
             LoadStaleDaysTextBox.Text = GetOriginalSettingValue(PreferenceName.LOAD_STALE_DAYS);
+
+            ClosedToActiveAmountSlider.Value = double.Parse(GetOriginalSettingValue(PreferenceName.STATUS_ACTIVE_TO_COMPLETE_PCN));
+
+            SelectComboItem(JournalSortingComboxBox, GetOriginalSettingValue(PreferenceName.JOURNAL_ORDERING));
+
+            // --- Backup options -----------------------------------------------------------------------------------------------------
+            if (GetOriginalSettingValue(PreferenceName.DATA_EXPORT_AUTOMATICALLY) == "1")
+                AutomaticBackupCheckBox.IsChecked = true;
+
+            SelectComboItem(BackupDaysComboBox, GetOriginalSettingValue(PreferenceName.DATA_EXPORT_PERIOD_DAYS));
+
+            SelectComboItem(WorkItemSelectionComboBox, GetOriginalSettingValue(PreferenceName.DATA_EXPORT_WORKITEM_SELECTION));
+            WorkItemClosedDaysTextBox.Text = GetOriginalSettingValue(PreferenceName.DATA_EXPORT_DAYS_STALE);
+            SelectComboItem(DueDateComboBox, GetOriginalSettingValue(PreferenceName.DATA_EXPORT_DUEDATE_SELECTION));
+            SelectComboItem(StatusComboBox, GetOriginalSettingValue(PreferenceName.DATA_EXPORT_STATUS_SELECTION));
+
+            if (GetOriginalSettingValue(PreferenceName.DATA_EXPORT_INCLUDE_DELETED) == "1")
+                BackupIncludeDeletedCheckBox.IsChecked = true;
+
+            BackupSaveToTextBox.Text = GetOriginalSettingValue(PreferenceName.DATA_EXPORT_DEFAULT_LOCATION);
+            BackupCopyToTextBox.Text = GetOriginalSettingValue(PreferenceName.DATA_EXPORT_COPY_LOCATION);
         }
 
         /// <summary>
@@ -152,9 +174,17 @@ namespace MyWorkTracker
             value = LoadStaleDaysTextBox.Text;
             var isNumeric = int.TryParse(value, out int staleDays);
             if (isNumeric == false)
-                value = "9999";
+                value = GetOriginalSettingValue(PreferenceName.DATA_EXPORT_DAYS_STALE_DEFAULT);
             if (GetOriginalSettingValue(PreferenceName.LOAD_STALE_DAYS).Equals(value, StringComparison.OrdinalIgnoreCase) == false)
                 _settingChanges.Add(PreferenceName.LOAD_STALE_DAYS, value);
+
+            value = WISChangeTextBox.Text;
+            if (GetOriginalSettingValue(PreferenceName.STATUS_ACTIVE_TO_COMPLETE_PCN).Equals(value, StringComparison.OrdinalIgnoreCase) == false)
+                _settingChanges.Add(PreferenceName.STATUS_ACTIVE_TO_COMPLETE_PCN, value);
+
+            value = ((ComboBoxItem)JournalSortingComboxBox.SelectedValue).Content.ToString();
+            if (GetOriginalSettingValue(PreferenceName.JOURNAL_ORDERING).Equals(value, StringComparison.OrdinalIgnoreCase) == false)
+                _settingChanges.Add(PreferenceName.JOURNAL_ORDERING, value);
 
         }
 
@@ -271,5 +301,12 @@ namespace MyWorkTracker
             if (DueDateGracePeriodTextBox != null)
                 DueDateGracePeriodTextBox.Text = Convert.ToString((int)GracePeriodSlider.Value);
         }
+
+        private void ClosedToActiveAmountSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            if (WISChangeTextBox != null)
+                WISChangeTextBox.Text = Convert.ToString((int)ClosedToActiveAmountSlider.Value);
+        }
+
     }
 }

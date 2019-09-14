@@ -1,10 +1,12 @@
 ﻿using MyWorkTracker.Code;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Xml.Linq;
 
 namespace MyWorkTracker
 {
@@ -39,11 +41,20 @@ namespace MyWorkTracker
             WorkItemStatus.ItemsSource = _model.GetWorkItemStatuses();
 
             // Set the application name and version.
-            this.Title = $"{_model.GetAppSettingValue(PreferenceName.APPLICATION_NAME)} [v{_model.GetAppSettingValue(PreferenceName.APPLICATION_VERSION)}]";
+            this.Title = $"{_model.GetAppPreferenceValue(PreferenceName.APPLICATION_NAME)} [v{_model.GetAppPreferenceValue(PreferenceName.APPLICATION_VERSION)}]";
 
             DataContext = _model;
 
             ApplyWindowPreferences();
+
+/*            XElement _doc = XElement.Load(@"D:\zaml.xml");
+            Console.WriteLine("--------------------------------------");
+            IEnumerable address = from el in _doc.Elements("WorkItem")
+                                  select el;
+            foreach (var el in address)
+            {
+                Console.WriteLine(el);
+            }*/
         }
 
         /// <summary>
@@ -52,7 +63,7 @@ namespace MyWorkTracker
         /// </summary>
         private void ApplyWindowPreferences()
         {
-            string[] coords = _model.GetAppSettingValue(PreferenceName.APPLICATION_WINDOW_COORDS).Split(',');
+            string[] coords = _model.GetAppPreferenceValue(PreferenceName.APPLICATION_WINDOW_COORDS).Split(',');
             this.Left = double.Parse(coords[0]);
             this.Top = double.Parse(coords[1]);
             this.Width = double.Parse(coords[2]);
@@ -92,7 +103,6 @@ namespace MyWorkTracker
                     // Because the UI is divided into two lists (active and closed), we need to toggle the selections of both lists.
 
                     WorkItem wi = args.CurrentWorkItemSelection;
-                    Console.WriteLine($"Current selection is #{wi.Meta.WorkItem_ID}: {wi.Title}; {wi.Status} (active = {wi.IsConsideredActive})");
 
                     // The Work Item selection is of an 'Active' status.
                     // If the selection is Active, then we want to clear the Closed list selections.
@@ -107,13 +117,11 @@ namespace MyWorkTracker
                     }
                     else
                     {
-                        Console.WriteLine($"A");
                         // The Work Item selection is of a 'Closed' status.
                         // If the selection is Closed, then we want to clear the Active list selections.
                         Overview.SelectedItem = null;
                         if ((ClosedListView.SelectedItem == null) && (ClosedListView.Items.Contains(wi)))
                         {
-                            Console.WriteLine($"A2");
                             ClosedListView.SelectedItem = wi;
                         }
                     }
@@ -132,6 +140,7 @@ namespace MyWorkTracker
                     _model.SetApplicationMode(DataEntryMode.EDIT);
 
                     _model.IsBindingLoading = false;
+
                     break;
 
                 case AppAction.WORK_ITEM_ADDED:
@@ -170,7 +179,8 @@ namespace MyWorkTracker
                                 WorkItemProgressSlider.IsEnabled = true;
                                 if (wi2.Completed == 100)
                                 {
-                                    wi2.Completed = MWTModel.CLOSED_TO_ACTIVE_AMOUNT;
+                                    string strValue = _model.GetAppPreferenceValue(PreferenceName.STATUS_ACTIVE_TO_COMPLETE_PCN);
+                                    wi2.Completed = int.Parse(strValue);
                                 }
                             }
                         } else
@@ -178,8 +188,6 @@ namespace MyWorkTracker
                             // do nothing
                         }
                     }
-
-
                     break;
 
                 case AppAction.SET_APPLICATION_MODE:
@@ -230,6 +238,51 @@ namespace MyWorkTracker
                     int indexOf = _model.SelectedWorkItem.Journals.IndexOf((JournalEntry)args.Object1);
                     _model.SelectedWorkItem.Journals.Remove((JournalEntry)args.Object1);
                     _model.SelectedWorkItem.Journals.Insert(indexOf, (JournalEntry)args.Object2);
+                    break;
+
+                case AppAction.DATA_EXPORT:
+                    ExportWindow exportDialog = new ExportWindow(_controller.GetPreferencesBeginningWith("DATA_EXPORT"));
+                    exportDialog.ShowDialog();
+
+                    if (exportDialog.WasSubmitted)
+                    {
+                        string dbConn = null;
+                        if (exportDialog.ExportFromSystemFile)
+                            dbConn = _controller.DBConnectionString;
+                        else
+                        {
+                            dbConn = "data source=" + exportDialog.ExportFile;
+
+                            // Save the last directory where the export has come from.
+                            int index = exportDialog.ExportFile.LastIndexOf('\\');
+                            string exportDirectory = exportDialog.ExportFile.Substring(0, index - 1);
+                            if (_model.GetAppPreferenceValue(PreferenceName.DATA_EXPORT_LAST_DIRECTORY).Equals(exportDirectory) == false)
+                            {
+                                _controller.UpdateAppPreference(PreferenceName.DATA_EXPORT_LAST_DIRECTORY, exportDirectory);
+                            }
+                        }
+
+                        _controller.ExportToXML(dbConn, exportDialog.SaveLocation, exportDialog.IncludeSettings, exportDialog.WorkItemType, exportDialog.StaleNumber, 
+                            exportDialog.IncludeDeleted, !exportDialog.AllStatuses, !exportDialog.AllDueDates);
+
+                        MessageBox.Show($"Export has been saved to {exportDialog.SaveLocation}", "Export Complete");
+                    }
+                    break;
+
+                case AppAction.DATA_IMPORT:
+                    ImportWindow importDialog = new ImportWindow(_model.GetAppPreferenceValue(PreferenceName.APPLICATION_VERSION),
+                        _model.GetAppPreferenceValue(PreferenceName.DATA_EXPORT_COPY_LOCATION));
+                    importDialog.ShowDialog();
+
+                    if ((importDialog.WasSubmitted) && (importDialog.ImportSelectionCount > 0))
+                    {
+                        Dictionary<PreferenceName, string> preferences = new Dictionary<PreferenceName, string>();
+                        if (importDialog.ImportPreferencesSelected)
+                        {
+                            preferences = importDialog.LoadedPreferences;
+                        }
+                        _controller.ImportData(preferences, importDialog.GetImportStatuses, importDialog.LoadedXMLDocument);
+                    }
                     break;
             }
 
@@ -400,7 +453,7 @@ namespace MyWorkTracker
                         int rowID = -1;
                         // If the DueDate (from database) has been set within x mins of now, UPDATE the record instead of INSERTING it.
                         int minutesSinceLastSet = DateTime.Now.Subtract(selectedWI.Meta.DueDateUpdateDateTime).Minutes;
-                        if (minutesSinceLastSet < Convert.ToInt32(_controller.GetMWTModel().GetAppSettingValue(PreferenceName.DUE_DATE_SET_WINDOW_MINUTES)))
+                        if (minutesSinceLastSet < Convert.ToInt32(_controller.GetMWTModel().GetAppPreferenceValue(PreferenceName.DUE_DATE_SET_WINDOW_MINUTES)))
                         {
                             // Update
                             rowID = _controller.UpdateDBDueDate(selectedWI, ddDialog.NewDateTime, ddDialog.ChangeReason);
@@ -436,7 +489,7 @@ namespace MyWorkTracker
                 UpdateWorkItemDBAsRequired();
             }
 
-            if (_model.GetAppSettingValue(PreferenceName.SAVE_WINDOW_COORDS_ON_EXIT).Equals("1")) {
+            if (_model.GetAppPreferenceValue(PreferenceName.SAVE_WINDOW_COORDS_ON_EXIT).Equals("1")) {
                 string coords = $"{this.Left},{this.Top},{this.Width},{this.Height}";
                 _model.FireUpdateAppPreference(PreferenceName.APPLICATION_WINDOW_COORDS, coords);
             }
@@ -504,7 +557,7 @@ namespace MyWorkTracker
             JournalEntry je = (JournalEntry)JournalEntryList.SelectedItem;
 
             // Check to see if journal entry deletion should be confirmed.
-            if (_model.GetAppSettingValue(PreferenceName.CONFIRM_JOURNAL_DELETION) == "1")
+            if (_model.GetAppPreferenceValue(PreferenceName.CONFIRM_JOURNAL_DELETION) == "1")
             {
                 var journalDialog = new JournalDialog(_model.SelectedWorkItem, je, DataEntryMode.DELETE);
                 journalDialog.Owner = this;
@@ -567,5 +620,20 @@ namespace MyWorkTracker
             }
         }
 
+        private void HandleDoubleClickOnJournal(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            _model.SelectedJournalEntry = (JournalEntry)JournalEntryList.SelectedItem;
+            EditJournalButton_Click(sender, e);
+        }
+
+        private void ExportButton_Click(object sender, RoutedEventArgs e)
+        {
+            _model.FireDataExportRequest();
+        }
+
+        private void ImportButton_Click(object sender, RoutedEventArgs e)
+        {
+            _model.FireDataImportRequest();
+        }
     }
 }

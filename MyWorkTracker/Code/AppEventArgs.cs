@@ -9,6 +9,11 @@
         public object Object2 { get; set; } = null;
         public object Object3 { get; set; } = null;
 
+        public AppEventArgs(AppAction action)
+        {
+            Action = action;
+        }
+
         public AppEventArgs(AppAction action, WorkItem current)
         {
             Action = action;

@@ -9,7 +9,7 @@
 INSERT INTO Setting ([Name], [Value], DefaultValue, [Description], UserCanEdit) 
 VALUES	/* Application Values - Non configurable */
 		('APPLICATION_NAME', 'MyWorkTracker', 'MyWorkTracker', 'The name of the Application', 'N'),
-		('APPLICATION_VERSION', '0.2.0', '0.2.0', 'The version number of the Application', 'N'),
+		('APPLICATION_VERSION', '0.2.5', '0.2.5', 'The version number of the Application', 'N'),
 
 		/* Application Values - Configurable */
 		('APPLICATION_WINDOW_COORDS', '100,0,750,750', '100,0,750,750', 'The window''s location and size (left, top, width, height)', 'Y'),
@@ -23,6 +23,24 @@ VALUES	/* Application Values - Non configurable */
 		('DUE_DATE_SET_WINDOW_MINUTES', '10', '10', 'If the Due Date is altered within this time period of setting it, don''t record it as a change.', 'Y'),
 		('DUE_DATE_CAN_BE_WEEKENDS', '0', '0', 'Should a Due Date on a Saturday or Sunday be considered legitimate?', 'Y'),
 
+		/* Work Item Status */
+		('STATUS_ACTIVE_TO_COMPLETE_PCN', '75', '75', 'When a WorkItem is moved from active-to-complete, set the Completion percent.', 'Y'),
+
 		/* Journals */
-		('CONFIRM_JOURNAL_DELETION', '1', '1', 'Should a Journal Entry deletion be confirmed?', 'Y')
+		('CONFIRM_JOURNAL_DELETION', '1', '1', 'Should a Journal Entry deletion be confirmed?', 'Y'),
+		('JOURNAL_ORDERING', 'bottom', 'bottom', 'Should new Journal Entries appear at bottom or top of list?', 'Y'),
+
+		/* Backup options */
+		('DATA_EXPORT_LAST_DONE', '', '', 'When the backup was last done', 'N'),
+		('DATA_EXPORT_LAST_DIRECTORY', '', '', 'Where the last export file was chosen from', 'N'),
+		('DATA_EXPORT_AUTOMATICALLY', '1', '1', 'Should a backup be done automatically? (1 or 0)', 'Y'),
+		('DATA_EXPORT_PERIOD_DAYS', '1', '1', 'How often should the backup be done (in days)?', 'Y'),
+		('DATA_EXPORT_WORKITEM_SELECTION', 'all', 'all', 'Which WorkItems should be backed up? Options are all, active only and active plus closed', 'Y'),
+		('DATA_EXPORT_DAYS_STALE', '10', '10', 'When exporting Closed Work Items, take this many days?', 'Y'),
+		('DATA_EXPORT_DAYS_STALE_DEFAULT', '9999', '9999', 'If no value is selected for DATA_EXPORT_DAYS_STALE, what should it be defaulted to?', 'Y'),
+		('DATA_EXPORT_DUEDATE_SELECTION', 'full', 'full', 'What Due Date info should be backed up? Options are all and latest', 'Y'),
+		('DATA_EXPORT_STATUS_SELECTION', 'full', 'full', 'What Status info should be backed up? Options are all and latest', 'Y'),
+		('DATA_EXPORT_INCLUDE_DELETED', '0', '0', 'Should deleted Work Items be included in the backup? Options are 0 or 1', 'Y'),
+		('DATA_EXPORT_DEFAULT_LOCATION', 'D:\Test.xml', 'C:\', 'Location where backup files should be placed.', 'Y'),
+		('DATA_EXPORT_COPY_LOCATION', '', '', 'Location where backup files should be copied (duplicated) to.', 'Y')
 		;

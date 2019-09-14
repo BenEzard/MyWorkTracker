@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MyWorkTracker"
         mc:Ignorable="d"
-        Title="Set Preferences" Height="300" Width="460">
+        Title="Set Preferences" Height="500" Width="540">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -16,7 +16,7 @@
         <TabControl TabStripPlacement="Left" Grid.Column="0" Grid.Row="1">
             
             <TabItem Name="ApplicationTab" Header="Application">
-                <StackPanel Orientation="Vertical">
+                <StackPanel Orientation="Vertical" Margin="5">
                     <CheckBox Name="SaveWindowCoordsOnExitCheckBox" Content="Save Application position and size on Exit" Margin="5,5,0,5" />
                     <CheckBox Name="SaveWindowCoordsCheckBox" Content="Save current position and size of main window" Margin="5,0,0,5" />
                     <StackPanel Orientation="Horizontal" Margin="5,0,0,0">
@@ -24,11 +24,66 @@
                         <TextBox Name="LoadStaleDaysTextBox" Width="40" ToolTip="Enter a number" />
                         <TextBlock Text=" days." />
                     </StackPanel>
+                    <GroupBox Header="Backup Options" Margin="5">
+                        <StackPanel Orientation="Vertical">
+                            <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
+                                <CheckBox Name="AutomaticBackupCheckBox" Content="Automatically create backups every "  VerticalAlignment="Center"/>
+                                <ComboBox Name="BackupDaysComboBox">
+                                    <ComboBoxItem>1</ComboBoxItem>
+                                    <ComboBoxItem>2</ComboBoxItem>
+                                    <ComboBoxItem>3</ComboBoxItem>
+                                    <ComboBoxItem>4</ComboBoxItem>
+                                    <ComboBoxItem>5</ComboBoxItem>
+                                    <ComboBoxItem>10</ComboBoxItem>
+                                    <ComboBoxItem>15</ComboBoxItem>
+                                    <ComboBoxItem>20</ComboBoxItem>
+                                    <ComboBoxItem>30</ComboBoxItem>
+                                </ComboBox>
+                                <TextBlock Text=" days." VerticalAlignment="Center" />
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="For " VerticalAlignment="Center" />
+                                <ComboBox Name="WorkItemSelectionComboBox" Width="130" Margin="5,0,0,0">
+                                    <ComboBoxItem>all</ComboBoxItem>
+                                    <ComboBoxItem>only Active</ComboBoxItem>
+                                    <ComboBoxItem>Active plus Closed</ComboBoxItem>
+                                </ComboBox>
+                                <TextBlock Text=" Work Items within " VerticalAlignment="Center" />
+                                <TextBox Name="WorkItemClosedDaysTextBox" Width="30" IsEnabled="False"/>
+                                <TextBlock Text=" days"  VerticalAlignment="Center"/>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,5,0,5">
+                                <TextBlock Text="with the " VerticalAlignment="Center" />
+                                <ComboBox Name="DueDateComboBox" Width="80">
+                                    <ComboBoxItem>full</ComboBoxItem>
+                                    <ComboBoxItem>latest</ComboBoxItem>
+                                </ComboBox>
+                                <TextBlock Text=" Due Date information" VerticalAlignment="Center" />
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="and the " VerticalAlignment="Center"/>
+                                <ComboBox Name="StatusComboBox" Width="80">
+                                    <ComboBoxItem>full</ComboBoxItem>
+                                    <ComboBoxItem>latest</ComboBoxItem>
+                                </ComboBox>
+                                <TextBlock Text=" Status information." VerticalAlignment="Center"/>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,5,09,0">
+                                <TextBlock Text="Save to: " VerticalAlignment="Center"/>
+                                <TextBox Name="BackupSaveToTextBox" Width="295" />
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,5,0,5">
+                                <TextBlock Text="then copy to: " VerticalAlignment="Center"/>
+                                <TextBox Name="BackupCopyToTextBox" Width="265" />
+                            </StackPanel>
+                            <CheckBox Name="BackupIncludeDeletedCheckBox" Content="Include deleted items in backup" />
+                        </StackPanel>
+                    </GroupBox>
                 </StackPanel>
             </TabItem>
             
             <TabItem Name="DueDatesTab" Header="Due Dates">
-                <StackPanel Orientation="Vertical">
+                <StackPanel Orientation="Vertical" Margin="5">
                     <GroupBox Header="Due Date Defaults">
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -96,14 +151,45 @@
                     </StackPanel>
                 </StackPanel>
             </TabItem>
+
+            <TabItem Name="WIStatusTab" Header="Work Item Statuses">
+                <Grid Margin="5">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="4*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition />
+                    </Grid.RowDefinitions>
+                    <TextBlock Text="When a WorkItem Status changes from Closed to Active set Completed to:" TextWrapping="Wrap" />
+                    <StackPanel Grid.Column="1" Grid.ColumnSpan="2" VerticalAlignment="Center" Orientation="Horizontal">
+                        <Slider Name="ClosedToActiveAmountSlider" ValueChanged="ClosedToActiveAmountSlider_ValueChanged"
+                            IsSnapToTickEnabled="False" IsMoveToPointEnabled="True" Minimum="0" Maximum="99" Width="99"/>
+                        <TextBox Name="WISChangeTextBox" Width="20"/>
+                    </StackPanel>
+                </Grid>
+            </TabItem>
+            
             <TabItem Name="JournalTab" Header="Journals">
-                <CheckBox Name="ConfirmJournalCheckBox"
-                          Content="Confirm before deleting journal entries" Margin="5"/>
+                <StackPanel Orientation="Vertical" Margin="5">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="New Journal Entries should appear at " VerticalAlignment="Center"/>
+                        <ComboBox Name="JournalSortingComboxBox" Width="80">
+                            <ComboBoxItem Content="top" />
+                            <ComboBoxItem Content="bottom" />
+                        </ComboBox>
+                        <TextBlock Text=" of list." VerticalAlignment="Center" />
+                    </StackPanel>
+                    <CheckBox Name="ConfirmJournalCheckBox"
+                          Content="Confirm before deleting journal entries" Margin="0,5,0,0"/>
+                </StackPanel>
             </TabItem>
         </TabControl>
         <StackPanel Orientation="Horizontal" Grid.Row="2" HorizontalAlignment="Right">
             <Button Name="ApplyDefaults" Click="ApplyDefaults_Click"
-                    Margin="5,5,40,5">
+                    Margin="5,5,120,5">
                 <StackPanel Orientation="Horizontal" Margin="5,0,5,0">
                     <Image Source="Images\settings_reload.png" Width="26" />
                     <TextBlock Text="Apply Defaults &amp; Close" VerticalAlignment="Center" Margin="5,0,0,0" />

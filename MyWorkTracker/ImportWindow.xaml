@@ -1,0 +1,94 @@
+﻿<Window x:Class="MyWorkTracker.ImportWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:MyWorkTracker"
+        mc:Ignorable="d"
+        Title="Import Data" Height="500" Width="550" Margin="5">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition />
+            <ColumnDefinition />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <StackPanel Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="5">
+            <TextBox Name="ImportFileTextBox" Width="400"/>
+            <Button Name="SelectFileButton" Margin="5,0,0,0" Click="SelectFileButton_Click">
+                <StackPanel Orientation="Horizontal">
+                    <Image Source="images\small-folder.png" Width="16" Margin="5,0,5,0" />
+                    <TextBlock Text="Select File..." VerticalAlignment="Center" Margin="5,0,5,0"/>
+                </StackPanel>
+            </Button>
+        </StackPanel>
+        <StackPanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Margin="5,0,0,0" Orientation="Horizontal" VerticalAlignment="Center" >
+            <TextBlock Text="File Date:" />
+            <TextBox Name="FileDataTextBox" Margin="5,0,0,0" Width="130" Background="LightGray" IsEnabled="False"/>
+            <TextBlock Text="Load version:" Margin="20,0,5,0"/>
+            <TextBox Name="LoadVersionTextBox" Width="40" Background="LightGray" IsEnabled="False"/>
+            <TextBlock Text="into version:" Margin="20,0,5,0"/>
+            <TextBox Name="IntoVersionTextBox" Width="40" Background="LightGray" IsEnabled="False"/>
+        </StackPanel>
+        <GroupBox Header="Load Options" Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" Margin="5">
+            <StackPanel Orientation="Vertical">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="Work Items:" Margin="5,2,5,2" />
+                    <RadioButton GroupName="LoadWIOption" Name="AllRadioButton" 
+                                 Click="SelectListItems"
+                                 Content="All" Margin="10,2,0,2"/>
+                    <RadioButton GroupName="LoadWIOption" Name="ActiveRadioButton" 
+                                 Click="SelectListItems"
+                                 Content="Active" Margin="5,2,0,2 "/>
+                    <RadioButton GroupName="LoadWIOption" Name="ClosedRadioButton" 
+                                 Click="SelectListItems"
+                                 Content="Closed" Margin="5,2,0,2 "/>
+                    <RadioButton GroupName="LoadWIOption" Name="SelectedOnlyRadioButton" 
+                                 Click="SelectListItems" IsChecked="True" 
+                                 Content="Selected Only" Margin="10,2,0,2" />
+                </StackPanel>
+                <CheckBox Content="Load Preferences" Name="LoadPreferencesCheckBox"
+                          Grid.Row="2" Grid.Column="0" Margin="5,2,0,2" />
+            </StackPanel>
+        </GroupBox>
+        <TextBlock Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" 
+                   Margin="5,0,0,0"  Foreground="DarkGray">(Hold Ctrl key while left-mouse clicking to select multiple non-consecutive items).</TextBlock>
+        <ListView Name="LoadList" SelectionMode="Extended"  
+                  ScrollViewer.HorizontalScrollBarVisibility="Visible" ScrollViewer.VerticalScrollBarVisibility="Visible" MaxHeight="250"
+                  ItemsSource="{Binding _importList}" SelectionChanged="UpdateSelectionLabel"
+                  Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,10,0,0">
+            <ListView.View>
+                <GridView>
+                    <GridViewColumn Header="ID" Width="40" DisplayMemberBinding="{Binding WorkItemID}" />
+                    <GridViewColumn Header="Created" Width="80" DisplayMemberBinding="{Binding CreationDate, StringFormat=\{0:dd/MM/yy\}}" />
+                    <GridViewColumn Header="Title" Width="230" DisplayMemberBinding="{Binding Title}" />
+                    <GridViewColumn Header="Status" Width="120" DisplayMemberBinding="{Binding Status}" />
+                </GridView>
+            </ListView.View>
+        </ListView>
+        <StackPanel Grid.Row="5" Grid.Column="0"  VerticalAlignment="Center">
+            <TextBlock Name="SelectionCountTextBox" Text="0 Work Items selected" Margin="10,0,0,0" />
+        </StackPanel>
+        <StackPanel Orientation="Horizontal" 
+                    Grid.Row="5" Grid.Column="1" Grid.ColumnSpan="2" Margin="0,5,5,5" HorizontalAlignment="Right" VerticalAlignment="Bottom">
+            <Button Name="CancelButton" Margin="5,0,0,0" Click="CancelButton_Click" >
+                <StackPanel Orientation="Horizontal">
+                    <Image Source="images\cancel.png" Width="26" Margin="5,0,0,0"/>
+                    <TextBlock Text="Cancel" VerticalAlignment="Center" Margin="5,0,5,0" />
+                </StackPanel>
+            </Button>
+            <Button Name="ImportButton" Margin="5,0,0,0" Click="ImportButton_Click">
+                <StackPanel Orientation="Horizontal">
+                    <Image Source="images\import.png" Width="26" Margin="5,0,5,0" />
+                    <TextBlock Text="Import" VerticalAlignment="Center" Margin="0,0,5,0" />
+                </StackPanel>
+            </Button>
+        </StackPanel>
+    </Grid>
+</Window>

@@ -182,6 +182,14 @@ namespace MyWorkTracker
                 JournalHeaderTextBox.Text = entry.Title;
                 JournalEntryTextBox.Text = entry.Entry;
             }
+
+            if (mode == DataEntryMode.ADD)
+            {
+                JournalHeaderTextBox.Focus();
+            }
+            else if (mode == DataEntryMode.EDIT) {
+                JournalEntryTextBox.Focus();
+            }
         }
 
         /// <summary>

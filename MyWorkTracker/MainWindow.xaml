@@ -4,10 +4,16 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MyWorkTracker"
+        xmlns:local1="clr-namespace:MyWorkTracker.Code"
         mc:Ignorable="d"
         Title="MyWorkTracker"
             Height="750" Width="750" Left="100" Top="0" Closing="Window_Closing" >
-    
+    <Window.Resources>
+        <Style x:Key="JournalStyle" TargetType="{x:Type ListViewItem}">
+            <EventSetter Event="MouseDoubleClick" Handler="HandleDoubleClickOnJournal" />
+        </Style>
+        <local1:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+    </Window.Resources>
     <DockPanel>
         <ToolBarTray DockPanel.Dock="Top" Margin="0">
             <ToolBar Band="1" BandIndex="1">
@@ -31,6 +37,17 @@
                                 </Style>
                             </Image.Style>
                         </Image>
+                    </StackPanel>
+                </Button>
+                <Separator />
+                <Button Name="ExportButton" ToolBar.OverflowMode="AsNeeded" Click="ExportButton_Click">
+                    <StackPanel Orientation="Horizontal">
+                        <Image Source="Images\export.png" Width="26" ToolTip="Export data" />
+                    </StackPanel>
+                </Button>
+                <Button Name="ImportButton" ToolBar.OverflowMode="AsNeeded" Click="ImportButton_Click">
+                    <StackPanel Orientation="Horizontal">
+                        <Image Source="Images\import.png" Width="26" ToolTip="Import data" />
                     </StackPanel>
                 </Button>
                 <Separator />
@@ -140,9 +157,12 @@
                              TextChanged="WorkItemChanged"
                              FontSize="16" FontWeight="Bold" Width="390" Margin="5" Background="LightYellow" BorderThickness="0" VerticalAlignment="Center"
                                   />
-                    <TextBlock Padding="5,5,5,5" VerticalAlignment="Center">Due Date:</TextBlock>
+                    <TextBlock 
+                        Visibility="{Binding IsApplicationInAddMode, Converter={StaticResource BooleanToVisibilityConverter}}"
+                        Padding="5,5,5,5" VerticalAlignment="Center">Due Date:</TextBlock>
                     <Button Name="DueDateButton" Click="DueDateButton_Click" 
-                            Content="{Binding SelectedWorkItem.DueDate, StringFormat=\{0:ddd dd/MM HH:mm\}}" IsEnabled="{Binding IsWorkItemSelected}"
+                            Content="{Binding SelectedWorkItem.DueDate, StringFormat=\{0:ddd dd/MM HH:mm\}}" 
+                            IsEnabled="{Binding IsWorkItemSelected}" Visibility="{Binding IsApplicationInEditMode, Converter={StaticResource BooleanToVisibilityConverter}}"
                             Padding="5" Margin="5" />
                     <TextBlock Name="DueInDaysTextField" 
                              Padding="5,5,5,5" VerticalAlignment="Center" Background="LightYellow" Width="200" />
@@ -217,9 +237,9 @@
                                         </Image>
                                 </Button>
                             </StackPanel>
-                            
-                            <ListView Name="JournalEntryList"
-                                      
+
+                            <ListView Name="JournalEntryList" ItemContainerStyle="{StaticResource JournalStyle}"
+                                      Background="LightYellow"
                                       ScrollViewer.HorizontalScrollBarVisibility="Disabled" SelectionMode="Single" SelectionChanged="JournalEntryList_SelectionChanged" > 
                                 <ListView.ItemTemplate>
                                     <DataTemplate>
@@ -240,9 +260,9 @@
                                                 <Border BorderBrush="LightGray" BorderThickness="0,0,0,2">
                                                     <StackPanel Orientation="Horizontal">
                                                         <TextBlock Text="{Binding Title}" Grid.Row="0" Grid.Column="1" Margin="0,5,20,0"  Foreground="DarkGray" />
-                                                        <TextBlock Text="{Binding CreationDateTime}" Grid.Row="0" Grid.Column="0" Margin="0,5,0,0" Foreground="LightGray" />
+                                                        <TextBlock Text="{Binding CreationDateTime, StringFormat=\{0:ddd dd/MM HH:mm\}}" Grid.Row="0" Grid.Column="0" Margin="0,5,0,0" Foreground="LightGray" />
                                                         <TextBlock Text="      " Grid.Row="0" Grid.Column="0" Margin="0,5,0,0" Foreground="LightGray" />
-                                                        <TextBlock Text="{Binding ModificationDateTime}" Grid.Row="0" Grid.Column="0" Margin="0,5,0,0" Foreground="LightGray" />
+                                                        <TextBlock Text="{Binding ModificationDateTime, StringFormat=\{0:ddd dd/MM HH:mm\}}" Grid.Row="0" Grid.Column="0" Margin="0,5,0,0" Foreground="LightGray" />
                                                     </StackPanel>
                                                 </Border>
 
@@ -264,24 +284,29 @@
 
                 <!-- Bottom row -->
                 <StackPanel Grid.Column="0" Grid.Row="2" Orientation="Horizontal">
-                    <TextBlock Text="Progress:" Margin="5"/>
+                    <TextBlock Text="Progress:" Margin="5" VerticalAlignment="Center"
+                               Visibility="{Binding IsApplicationInEditMode, Converter={StaticResource BooleanToVisibilityConverter}}"/>
                     <Slider x:Name="WorkItemProgressSlider" 
-                            Value="{Binding SelectedWorkItem.Completed}" IsEnabled="{Binding IsWorkItemSelected}" ValueChanged="WorkItemChanged" 
-                                TickFrequency="10" TickPlacement="BottomRight" Margin="5" 
+                            Visibility="{Binding IsApplicationInEditMode, Converter={StaticResource BooleanToVisibilityConverter}}"
+                            Value="{Binding SelectedWorkItem.Completed}" IsEnabled="{Binding IsApplicationInEditMode}" ValueChanged="WorkItemChanged" 
+                                TickFrequency="10" TickPlacement="BottomRight" Margin="5" VerticalAlignment="Center"
                                 IsSnapToTickEnabled="False" IsMoveToPointEnabled="True"
                                 Minimum="0" Maximum="100" Width="120" />
-                    <TextBlock Padding="5,5,5,5"><Run Text="Status:"/></TextBlock>
+                    <TextBlock Padding="5,5,5,5" VerticalAlignment="Center"
+                               Visibility="{Binding IsApplicationInEditMode, Converter={StaticResource BooleanToVisibilityConverter}}">Status</TextBlock>
                     <ComboBox Name="WorkItemStatus" SelectionChanged="WorkItemStatusChanged"
-                              IsEditable="False" IsEnabled="{Binding IsWorkItemSelected}" 
+                              VerticalAlignment="Center"
+                              Visibility="{Binding IsApplicationInEditMode, Converter={StaticResource BooleanToVisibilityConverter}}"
+                              IsEditable="False" IsEnabled="{Binding IsApplicationInEditMode}" 
                               Margin="5" MinWidth="80" />
                 </StackPanel>
                 <StackPanel VerticalAlignment="Center" Orientation="Horizontal" HorizontalAlignment="Right"
                     Grid.Row="2" Grid.Column="0" >
                     <Button Name="CancelButton" 
-                            IsEnabled="{Binding IsApplicationInAddMode}" Click="CancelButton_Click"
+                            IsEnabled="{Binding IsApplicationInAddMode}" Visibility="{Binding IsApplicationInAddMode, Converter={StaticResource BooleanToVisibilityConverter}}" Click="CancelButton_Click"
                             Content="Cancel" Margin="5" Padding="5" />
                     <Button Name="SaveButton" 
-                            Click="SaveButton_Click" IsEnabled="{Binding IsApplicationInAddMode}"
+                            Click="SaveButton_Click" IsEnabled="{Binding IsApplicationInAddMode}" Visibility="{Binding IsApplicationInAddMode, Converter={StaticResource BooleanToVisibilityConverter}}"
                             Content="Save" Margin="5" Padding="5" />
                 </StackPanel>
 

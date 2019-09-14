@@ -7,12 +7,6 @@ namespace MyWorkTracker.Code
 {
     public class MWTModel : INotifyPropertyChanged
     {
-        // TODO: Put this in as a Preference.
-        /// <summary>
-        /// The amount of Completion % that should be auto-set when a WorkItem is moved from Completed back to Active. (Note it cannot be 100!).
-        /// </summary>
-        public const int CLOSED_TO_ACTIVE_AMOUNT = 50;
-
         public const string DatabaseFile = @"\Data\MyWorkTracker.db";
         public delegate void AppEventHandler(object obj, AppEventArgs e);
         public event AppEventHandler appEvent;
@@ -330,6 +324,21 @@ namespace MyWorkTracker.Code
         }
 
         /// <summary>
+        /// Fire a notification that a data export is requested.
+        /// </summary>
+        public void FireDataExportRequest()
+        {
+            var eventArgs = new AppEventArgs(AppAction.DATA_EXPORT);
+            appEvent?.Invoke(this, eventArgs);
+        }
+
+        public void FireDataImportRequest()
+        {
+            var eventArgs = new AppEventArgs(AppAction.DATA_IMPORT);
+            appEvent?.Invoke(this, eventArgs);
+        }
+
+        /// <summary>
         /// Fire a notification that a Journal Entry has been requested to be deleted.
         /// </summary>
         /// <param name="wi"></param>
@@ -357,7 +366,7 @@ namespace MyWorkTracker.Code
         /// </summary>
         /// <param name="settingName"></param>
         /// <returns></returns>
-        public string GetAppSettingValue(PreferenceName settingName)
+        public string GetAppPreferenceValue(PreferenceName settingName)
         {
             _appSettings.TryGetValue(settingName, out Preference rValue);
             return rValue.Value;

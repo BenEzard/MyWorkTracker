@@ -7,17 +7,17 @@ SELECT DISTINCT DueDate.WorkItem_ID,
              SecondLatest.SecondLatestDueDateTime, 
              SecondLatest.SecondLatestCreationDateTime, 
              (strftime('%s', Latest.LatestCreationDateTime) - strftime('%s', SecondLatest.SecondLatestCreationDateTime)) / 60 AS CreationTimeDiffMins
-FROM DueDates 
+FROM DueDate 
 LEFT JOIN ( 
                 SELECT DueDate.WorkItem_ID, 
                              DueDate.DueDate_ID AS LatestDueDateID, 
                              DueDate.DueDateTime AS LatestDueDateTime, 
                              DueDate.CreationDateTime AS LatestCreationDateTime 
-                FROM DueDates 
+                FROM DueDate 
                 INNER JOIN ( 
                                 SELECT WorkItem_ID, 
                                              MAX(CreationDateTime) AS mxCreate 
-                                FROM DueDates 
+                                FROM DueDate 
                                 GROUP BY WorkItem_ID 
                             ) AS LatestSub 
                 ON DueDate.WorkItem_ID = LatestSub.WorkItem_ID 
@@ -29,15 +29,15 @@ LEFT JOIN (
                              DueDate.DueDate_ID AS SecondLatestDueDateID, 
                              DueDate.DueDateTime AS SecondLatestDueDateTime, 
                              DueDate.CreationDateTime AS SecondLatestCreationDateTime 
-                FROM DueDates 
+                FROM DueDate 
                 INNER JOIN ( 
                                 SELECT DueDate.WorkItem_ID, 
                                              MAX(CreationDateTime) AS mxCreate 
-                                FROM DueDates 
+                                FROM DueDate 
                                 LEFT JOIN ( 
                                                 SELECT WorkItem_ID, 
                                                              MAX(CreationDateTime) AS mxCreate 
-                                                FROM DueDates 
+                                                FROM DueDate 
                                                 GROUP BY WorkItem_ID 
                                             ) AS mx 
                                 ON DueDate.WorkItem_ID = mx.WorkItem_ID 
