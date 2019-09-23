@@ -4,8 +4,12 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MyWorkTracker"
+        xmlns:local1="clr-namespace:MyWorkTracker.Code"
         mc:Ignorable="d"
         Title="Journal Entry" Height="300" Width="350" SizeToContent="Height" MaxHeight="700">
+    <Window.Resources>
+        <local1:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+    </Window.Resources>
     <StackPanel Orientation="Vertical" Margin="5,5,5,0">
         <TextBlock Name="DialogLabel" 
                    Text="{Binding HelperText}" />
@@ -24,7 +28,7 @@
                 AcceptsReturn="True" AcceptsTab="True"
                 />
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-            <CheckBox Name="DontConfirmDeletionCheckBox" IsEnabled="{Binding IsInDeleteMode}"
+            <CheckBox Name="DontConfirmDeletionCheckBox" Visibility="{Binding IsInDeleteMode, Converter={StaticResource BooleanToVisibilityConverter}}"
                       Content="Don't confirm again" VerticalAlignment="Center"/>
             <Button Name="CancelButton" Click="CancelButton_Click"
                 Margin="15,5,5,5">

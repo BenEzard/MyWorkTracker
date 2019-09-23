@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
@@ -59,7 +60,7 @@ namespace MyWorkTracker
             Collection<CalendarDateRange> dates = new Collection<CalendarDateRange>();
             // Add the first Sunday
             CalendarSelection.BlackoutDates.Add(new CalendarDateRange(MostRecentSaturday.AddDays(1)));
-            for (int i = 0; i < 52; i++)
+            for (int i = 0; i < 52; i++) // TODO make this 52 a variable setting
             {
                 DateTime nextSaturday = MostRecentSaturday.AddDays(7);
                 CalendarSelection.BlackoutDates.Add(new CalendarDateRange(nextSaturday, nextSaturday.AddDays(1)));
@@ -126,8 +127,48 @@ namespace MyWorkTracker
         /// <param name="e"></param>
         private void SelectToday(object sender, RoutedEventArgs e)
         {
-            // TODO Change to display current month (if not on the current month)
-            CalendarSelection.SelectedDate = DateTime.Now;
+            IncrementCalendarSelection(0, null);
+        }
+
+        private void Select1Week(object sender, RoutedEventArgs e)
+        {
+            IncrementCalendarSelection(7, null);
+        }
+
+        private void Select2Weeks(object sender, RoutedEventArgs e)
+        {
+            IncrementCalendarSelection(14, null);
+        }
+
+        private void Select3Weeks(object sender, RoutedEventArgs e)
+        {
+            IncrementCalendarSelection(21, null);
+        }
+
+        private void Select1Month(object sender, RoutedEventArgs e)
+        {
+            IncrementCalendarSelection(null, 1);
+        }
+
+        private void Select1Year(object sender, RoutedEventArgs e)
+        {
+            IncrementCalendarSelection(null, 12);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="numberOfDays"></param>
+        private void IncrementCalendarSelection(int? numberOfDays=null, int? numberOfMonths=null)
+        {
+            DateTime newDT = DateTime.Now;
+            if ((numberOfDays.HasValue) && (numberOfMonths.HasValue == false))
+                newDT = newDT.AddDays(numberOfDays.Value);
+            else if ((numberOfDays.HasValue == false) && (numberOfMonths.HasValue))
+                newDT = newDT.AddMonths(numberOfMonths.Value);
+
+            CalendarSelection.SelectedDate = newDT;
+            CalendarSelection.DisplayDate = newDT;
         }
 
         /// <summary>
@@ -153,7 +194,7 @@ namespace MyWorkTracker
         /// </summary>
         private void CalculateNewDateTime()
         {
-            DateTime originalDate = CalendarSelection.SelectedDate.Value;
+            DateTime originalDate = CalendarSelection.SelectedDate.Value.Date;
             var cbItem = (ComboBoxItem)(HourCombo.SelectedValue);
             originalDate = originalDate.AddHours(Double.Parse((string)cbItem.Content));
             cbItem = (ComboBoxItem)(MinuteCombo.SelectedValue);
@@ -200,9 +241,22 @@ namespace MyWorkTracker
             this.Close();
         }
 
-/*        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        private void CalendarSelection_SelectedDatesChanged(object sender, SelectionChangedEventArgs e)
         {
-            WasDialogSubmitted = false;
-        }*/
+            var calendar = sender as Calendar;
+            if (calendar.SelectedDate.HasValue)
+            {
+                SelectedLabel.Text = $"{calendar.SelectedDate:dddd dd/MM}";
+            }
+        }
+
+        private void CalendarSelection_GotMouseCapture(object sender, MouseEventArgs e)
+        {
+            UIElement originalElement = e.OriginalSource as UIElement;
+            if (originalElement is CalendarDayButton || originalElement is CalendarItem)
+            {
+                originalElement.ReleaseMouseCapture();
+            }
+        }
     }
 }

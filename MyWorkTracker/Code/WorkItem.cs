@@ -17,7 +17,9 @@ namespace MyWorkTracker.Code
         private string _status = "";
         private int _amountComplete = 0;
         public DateTime CreateDateTime { get; set; } = DateTime.Now;
-        private DateTime _dueDateTime;
+        public DateTime DeleteDateTime { get; set; }
+
+        private DateTime _dueDateTime = DateTime.MinValue;
 
         /// <summary>
         /// Is this WorkItem considered active?

@@ -55,6 +55,7 @@
   <ItemGroup>
     <None Include="App.config" />
     <None Include="packages.config" />
+    <None Include="SQL\900 Insert Records.recs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="SQL\05 WorkItem.sql">
@@ -83,6 +84,10 @@
     <Content Include="SQL\55 vwWorkItem.sql">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <Content Include="SQL\60 vwExtractWorkItem.sql" />
+    <Content Include="SQL\65 vwExtractLatestWorkItemStatus.sql" />
+    <Content Include="SQL\70 vwExtractLatestDueDate.sql" />
+    <Content Include="SQL\75 vwExtractAllJournal.sql" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MyWorkTracker\MyWorkTracker.csproj">

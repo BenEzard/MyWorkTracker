@@ -6,8 +6,3 @@
 	DeletionDateTime DATETIME NULL 
 );
 
-INSERT INTO WorkItemStatus (WorkItem_ID, Status_ID) VALUES
-	(1, 1);
-
-INSERT INTO WorkItemStatus (WorkItem_ID, Status_ID, CreationDateTime) VALUES
-	(2, 3, '2019-05-20 11:00:00.000');

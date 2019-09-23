@@ -1,0 +1,72 @@
+﻿<Window x:Class="MyWorkTracker.ExportWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:MyWorkTracker"
+        mc:Ignorable="d"
+        Title="Data Export Options" Height="320" Width="400">
+        <StackPanel Orientation="Vertical" Margin="5">
+            <TextBlock Text="Export From:" />
+            <RadioButton GroupName="ExportType" Name="SystemFile"  IsChecked="True"
+                         Content="Current system file." Margin="5,2,0,2" />
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <RadioButton GroupName="ExportType" Name="AnotherFile" Content="Another system file:" Margin="5,2,0,2" />
+                <TextBox Name="ExportFileTextBox" Width="200" Margin="5,0,0,0" GotFocus="ExportFileTextBox_GotFocus"/>
+                <Button Name="SelectFileButton" Margin="5,0,0,0" Click="SelectFileButton_Click" ToolTip="Select a file to Export from">
+                    <StackPanel Orientation="Horizontal">
+                        <Image Source="images\small-folder.png" Width="16" Margin="5,0,5,0" />
+                    </StackPanel>
+                </Button>
+        </StackPanel>
+            <TextBlock Text="What should be exported:" Margin="0,10,0,0"/>
+        <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
+                <TextBlock Text="For " VerticalAlignment="Center" />
+                <ComboBox Name="WorkItemSelectionComboBox" 
+                    Width="130" Margin="5,0,0,0" SelectionChanged="WorkItemSelectionComboBox_SelectionChanged">
+                    <ComboBoxItem>all</ComboBoxItem>
+                    <ComboBoxItem>only Active</ComboBoxItem>
+                    <ComboBoxItem>Active plus Closed</ComboBoxItem>
+                </ComboBox>
+                <TextBlock Text=" Work Items within " VerticalAlignment="Center" />
+                <TextBox Name="WorkItemClosedDaysTextBox" Width="30" />
+                <TextBlock Text=" days"  VerticalAlignment="Center"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Margin="0,5,0,5">
+                <TextBlock Text="with the " VerticalAlignment="Center" />
+                <ComboBox Name="DueDateComboBox" Width="60">
+                    <ComboBoxItem>full</ComboBoxItem>
+                    <ComboBoxItem>latest</ComboBoxItem>
+                </ComboBox>
+                <TextBlock Text=" Due Date history" VerticalAlignment="Center" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="and the " VerticalAlignment="Center"/>
+                <ComboBox Name="StatusComboBox" Width="60">
+                    <ComboBoxItem>full</ComboBoxItem>
+                    <ComboBoxItem>latest</ComboBoxItem>
+                </ComboBox>
+                <TextBlock Text=" Status information." VerticalAlignment="Center"/>
+            </StackPanel>
+        <CheckBox Name="BackupIncludeDeletedCheckBox" Content="Include deleted items in backup" Margin="0,5,0,0" />
+        <CheckBox Name="BackupIncludeSettingsCheckBox" Content="Include Preferences in backup" Margin="0,5,0,0" />
+        <StackPanel Orientation="Horizontal" Margin="0,5,0,15">
+                <TextBlock Text="Save to: " VerticalAlignment="Center"/>
+                <TextBox Name="BackupSaveToTextBox" Width="295" />
+        </StackPanel>
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button Name="CancelButton" Click="CancelButton_Click" >
+                <StackPanel Orientation="Horizontal" Margin="5,0,5,0">
+                    <Image Source="images\cancel.png" Height="26"/>
+                    <TextBlock Text="Cancel" VerticalAlignment="Center" Margin="5,0,0,0"/>
+                </StackPanel>
+            </Button>
+            <Button Name="ExportButton"  Margin="10,0,5,0" Click="ExportButton_Click" >
+                <StackPanel Orientation="Horizontal" Margin="5,0,5,0">
+                    <Image Source="images\export.png" Height="26"/>
+                    <TextBlock Text="Export" VerticalAlignment="Center" Margin="5,0,0,0"/>
+                </StackPanel>
+            </Button>
+        </StackPanel>
+        </StackPanel>
+</Window>
