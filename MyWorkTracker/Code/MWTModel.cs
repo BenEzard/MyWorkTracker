@@ -48,6 +48,12 @@ namespace MyWorkTracker.Code
             set { _selectedWorkItem = value; OnPropertyChanged(""); }
         }
 
+        public void ClearAllWorkItems()
+        {
+            _activeWorkItems.Clear();
+            _closedWorkItems.Clear();
+        }
+
         public bool IsWorkItemSelected
         {
             get {
@@ -168,6 +174,15 @@ namespace MyWorkTracker.Code
             }
         }
 
+        public void RemoveWorkItem(WorkItem workItem)
+        {
+            if (workItem.IsConsideredActive)
+                _activeWorkItems.Remove(workItem);
+            else
+                _closedWorkItems.Remove(workItem);
+
+        }
+
         public ObservableCollection<WorkItem> GetWorkItems()
         {
             return _activeWorkItems;
@@ -236,6 +251,11 @@ namespace MyWorkTracker.Code
             return rValue;
         }
 
+        public void ClearApplicationPreferences()
+        {
+            _appSettings.Clear();
+        }
+
         /// <summary>
         /// Fire a notification that a new Work Item is being created (but has not yet been completed).
         /// </summary>
@@ -263,6 +283,22 @@ namespace MyWorkTracker.Code
         public void FireWorkItemStatusChange(WorkItem wi, WorkItemStatus newStatus, WorkItemStatus oldStatus)
         {
             var eventArgs = new AppEventArgs(AppAction.WORK_ITEM_STATUS_CHANGED, wi, newStatus, oldStatus);
+            appEvent?.Invoke(this, eventArgs);
+        }
+
+        /// <summary>
+        /// Fire a notification that a Work Item has been requested to be deleted./
+        /// </summary>
+        /// <param name="wi"></param>
+        /// <param name="logicalDelete"></param>
+        public void FireWorkItemDelete(WorkItem wi, bool logicalDelete)
+        {
+            AppEventArgs eventArgs = null;
+            if (logicalDelete)
+                eventArgs = new AppEventArgs(AppAction.WORK_ITEM_DELETE_LOGICAL, wi);
+            else
+                eventArgs = new AppEventArgs(AppAction.WORK_ITEM_DELETE_PHYSICAL, wi);
+
             appEvent?.Invoke(this, eventArgs);
         }
 
@@ -325,7 +361,7 @@ namespace MyWorkTracker.Code
         public void FireUpdateAppPreference(PreferenceName name, string newValue)
         {
             // PREFERENCE_CHANGED: PreferenceName, oldValue, newValue
-            var eventArgs = new AppEventArgs(AppAction.PREFERENCE_CHANGED, name, _appSettings[name], newValue);
+            var eventArgs = new AppEventArgs(action:AppAction.PREFERENCE_CHANGED, object1:name, object2:_appSettings[name], object3:newValue);
             appEvent?.Invoke(this, eventArgs);
         }
 
@@ -353,7 +389,7 @@ namespace MyWorkTracker.Code
         }
 
         /// <summary>
-        /// Return an Application Setting from the collection (in cache).
+        /// Return an Application Preference from the collection (in cache), as a string value.
         /// </summary>
         /// <param name="settingName"></param>
         /// <returns></returns>
@@ -361,6 +397,22 @@ namespace MyWorkTracker.Code
         {
             _appSettings.TryGetValue(settingName, out Preference rValue);
             return rValue.Value;
+        }
+
+
+        /// <summary>
+        /// Return an Application Preference from the collection (in cache), as a boolean value.
+        /// </summary>
+        /// <param name="settingName"></param>
+        /// <returns></returns>
+        public bool GetAppPreferenceAsBooleanValue(PreferenceName settingName)
+        {
+            bool rValue = false;
+            _appSettings.TryGetValue(settingName, out Preference stringValue);
+            if (stringValue.Value.Equals("1"))
+                rValue = true;
+
+            return rValue;
         }
 
 

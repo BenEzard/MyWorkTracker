@@ -10,6 +10,8 @@ namespace MyWorkTracker.Code
         public DateTime CreationDateTime { get; set; } = DateTime.Now;
         public DateTime? ModificationDateTime { get; set; }
 
+        public DateTime? DeletionDateTime { get; set; }
+
         public JournalEntry() { }
 
         public JournalEntry(string title, string entry)
@@ -25,6 +27,18 @@ namespace MyWorkTracker.Code
             Entry = entry;
             CreationDateTime = creationDateTime;
             ModificationDateTime = modificationDateTime;
+        }
+
+        public JournalEntry(string title, string entry, DateTime? creationDateTime, DateTime? modificationDateTime, DateTime? deletionDateTime)
+        {
+            Title = title;
+            Entry = entry;
+            if (creationDateTime.HasValue)
+                CreationDateTime = creationDateTime.Value;
+            if (modificationDateTime.HasValue)
+            ModificationDateTime = modificationDateTime.Value;
+            if (deletionDateTime.HasValue)
+            DeletionDateTime = deletionDateTime.Value;
         }
 
     }
