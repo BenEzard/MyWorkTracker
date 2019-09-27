@@ -6,27 +6,31 @@
         xmlns:local="clr-namespace:MyWorkTracker"
         xmlns:local1="clr-namespace:MyWorkTracker.Code"
         mc:Ignorable="d"
-        Title="Journal Entry" Height="300" Width="350" SizeToContent="Height" MaxHeight="700">
+        Title="Journal Entry" Height="350" Width="350" MaxHeight="700">
     <Window.Resources>
         <local1:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
     </Window.Resources>
     <StackPanel Orientation="Vertical" Margin="5,5,5,0">
-        <TextBlock Name="DialogLabel" 
-                   Text="{Binding HelperText}" />
+        <Border BorderThickness="0,0,0,1" BorderBrush="DarkGray" DockPanel.Dock="Top">
+            <StackPanel Orientation="Horizontal" Background="AliceBlue" Margin="0,0,0,0">
+                <TextBlock Name="DialogLabel" Text="{Binding HelperText}" FontSize="14" FontWeight="Normal" Padding="5" />
+            </StackPanel>
+        </Border>
         <StackPanel Orientation="Horizontal" Margin="0,5,0,5">
             <TextBlock Text="Heading:" />
             <TextBox Name="JournalHeaderTextBox"
                      GotFocus="ControlGainsFocus" LostFocus="ControlLosesFocus"
                      IsEnabled="{Binding IsNotDeleteMode}"
                      Background="LightYellow" 
-                     Width="280" Margin="5,0,0,0" />
+                     Width="270" Margin="5,0,0,0" />
         </StackPanel>
-        <TextBox Name="JournalEntryTextBox"
+        <TextBox Name="JournalEntryTextBox" MaxHeight="200"
                 IsEnabled="{Binding IsNotDeleteMode}"
                 GotFocus="ControlGainsFocus" LostFocus="ControlLosesFocus"
                 Background="LightYellow" MinLines="10" TextWrapping="Wrap" 
                 AcceptsReturn="True" AcceptsTab="True"
-                />
+                ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto"
+                 />
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
             <CheckBox Name="DontConfirmDeletionCheckBox" Visibility="{Binding IsInDeleteMode, Converter={StaticResource BooleanToVisibilityConverter}}"
                       Content="Don't confirm again" VerticalAlignment="Center"/>

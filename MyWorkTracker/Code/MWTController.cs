@@ -38,7 +38,7 @@ namespace MyWorkTracker.Code
         /// <param name="xml"></param>
         public void ImportData(string importFromVersion, Dictionary<PreferenceName, string> loadPreferences, List<WorkItemStatus> importStatuses, XDocument xml)
         {
-            if (importFromVersion.Equals("0.2.5"))
+            if (importFromVersion.Equals("0.3.0"))
             {
                 // Import any preference changes. 
                 // (Note that the passing method provides an empty collection if we don't want this to happen).
@@ -697,7 +697,9 @@ namespace MyWorkTracker.Code
                 }
             }
 
-            wiIDString = wiIDString.Substring(0, wiIDString.Length - 1);
+            if (wiIDString.Length > 0)
+                wiIDString = wiIDString.Substring(0, wiIDString.Length - 1);
+
             return allWorkItemsXML;
         }
 

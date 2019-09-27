@@ -5,14 +5,19 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MyWorkTracker"
         mc:Ignorable="d"
-        Title="Data Export Options" Height="320" Width="400">
+        Height="350" Width="400" WindowStartupLocation="Manual">
         <StackPanel Orientation="Vertical" Margin="5">
-            <TextBlock Text="Export From:" />
+        <Border BorderThickness="0,0,0,1" BorderBrush="DarkGray" DockPanel.Dock="Top">
+            <StackPanel Orientation="Horizontal" Background="AliceBlue" Margin="0,0,0,0">
+                <TextBlock Text="Data Export Options" FontSize="14" FontWeight="Normal" Padding="5" />
+            </StackPanel>
+        </Border>
+        <TextBlock Text="Export From:" />
             <RadioButton GroupName="ExportType" Name="SystemFile"  IsChecked="True"
                          Content="Current system file." Margin="5,2,0,2" />
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                 <RadioButton GroupName="ExportType" Name="AnotherFile" Content="Another system file:" Margin="5,2,0,2" />
-                <TextBox Name="ExportFileTextBox" Width="200" Margin="5,0,0,0" GotFocus="ExportFileTextBox_GotFocus"/>
+                <TextBox Name="ExportFileTextBox" Width="200" Margin="5,0,0,0" GotFocus="ExportFileTextBox_GotFocus" Background="LightYellow" />
                 <Button Name="SelectFileButton" Margin="5,0,0,0" Click="SelectFileButton_Click" ToolTip="Select a file to Export from">
                     <StackPanel Orientation="Horizontal">
                         <Image Source="images\small-folder.png" Width="16" Margin="5,0,5,0" />
@@ -52,7 +57,7 @@
         <CheckBox Name="BackupIncludeSettingsCheckBox" Content="Include Preferences in backup" Margin="0,5,0,0" />
         <StackPanel Orientation="Horizontal" Margin="0,5,0,15">
                 <TextBlock Text="Save to: " VerticalAlignment="Center"/>
-                <TextBox Name="BackupSaveToTextBox" Width="295" />
+                <TextBox Name="BackupSaveToTextBox" Width="295" Background="LightYellow" />
         </StackPanel>
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
             <Button Name="CancelButton" Click="CancelButton_Click" >
