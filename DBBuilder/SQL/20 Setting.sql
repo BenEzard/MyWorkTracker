@@ -9,7 +9,7 @@
 INSERT INTO Setting ([Name], [Value], DefaultValue, [Description], UserCanEdit) 
 VALUES	/* Application Values - Non configurable */
 		('APPLICATION_NAME', 'MyWorkTracker', 'MyWorkTracker', 'The name of the Application', 'N'),
-		('APPLICATION_VERSION', '0.3.0', '0.3.0', 'The version number of the Application', 'N'),
+		('APPLICATION_VERSION', '0.3.1', '0.3.1', 'The version number of the Application', 'N'),
 
 		/* Application Values - Configurable */
 		('APPLICATION_WINDOW_COORDS', '100,0,750,750', '100,0,750,750', 'The window''s location and size (left, top, width, height)', 'Y'),
@@ -35,7 +35,7 @@ VALUES	/* Application Values - Non configurable */
 		/* Backup options */
 		('DATA_EXPORT_LAST_DONE', '2019-09-13', '2019-09-13', 'When the backup was last done (a date)', 'N'),
 		('DATA_EXPORT_LAST_DIRECTORY', '', '', 'Where the last export file was chosen from', 'N'),
-		('DATA_EXPORT_AUTOMATICALLY', '1', '1', 'Should a backup be done automatically? (1 or 0)', 'Y'),
+		('DATA_EXPORT_AUTOMATICALLY', '0', '1', 'Should a backup be done automatically? (1 or 0)', 'Y'),
 		('DATA_EXPORT_PERIOD_DAYS', '1', '1', 'How often should the backup be done (in days)?', 'Y'),
 		('DATA_EXPORT_WORKITEM_SELECTION', 'all', 'all', 'Which WorkItems should be backed up? Options are all, active only and active plus closed', 'Y'),
 		('DATA_EXPORT_DAYS_STALE', '10', '10', 'When exporting Closed Work Items, take this many days?', 'Y'),

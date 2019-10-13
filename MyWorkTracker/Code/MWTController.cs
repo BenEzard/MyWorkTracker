@@ -109,7 +109,7 @@ namespace MyWorkTracker.Code
                             DeleteDateTime = DateTime.Parse(el2.Element("DeletionDate").Value);
 
                         WorkItemStatusEntry wise = new WorkItemStatusEntry(wi.Meta.WorkItem_ID, statusID, wiseCreateDateTime, DeleteDateTime);
-                        InsertDBWorkItemStatus(wise);
+                        InsertDBWorkItemStatusEntry(wise);
                     }
 
                     // Due Dates
@@ -166,41 +166,52 @@ namespace MyWorkTracker.Code
         public string DBConnectionString => dbConnectionString;
 
         /// <summary>
-        /// Create a new WorkItem.
+        /// Create a new WorkItem. This creates the WorkItem in memory and initialises some of it, but doesn't write anything to the DB.
         /// The DueDate is set based on default Settings.
         /// </summary>
         public void CreateNewWorkItem()
         {
-            var wi = new WorkItem();
+            // Get the default active Status. (Note due to DB constraints there can only be one type that is active and default).
+            WorkItemStatus wis = GetWorkItemStatuses(isConsideredActive: true, isDefault: true).ToArray()[0];
+
+            var wi = new WorkItem(wis);
+            wi.Status = wis.Status;                         // TODO: Remove; should be deprecated
+            wi.IsConsideredActive = wis.IsConsideredActive; // TODO: Remove; should be deprecated
 
             // Set the due date based on the default.
+            wi.DueDate = CalculateDefaultDueDate();
+
+            _model.FireCreateNewWorkItem(wi);
+        }
+
+        /// <summary>
+        /// Calculate the default Due Date (based on today + default Preferences)
+        /// </summary>
+        /// <returns></returns>
+        private DateTime CalculateDefaultDueDate()
+        {
             // Calculate the due date
             //   1. This will be the current datetime + the default amount
             DateTime dueDate = DateTime.Now.AddDays(Double.Parse(_model.GetAppPreferenceValue(PreferenceName.DEFAULT_WORKITEM_LENGTH_DAYS)));
             //   2. + end of the work day
             dueDate = new DateTime(dueDate.Year, dueDate.Month, dueDate.Day,
                 int.Parse(_model.GetAppPreferenceValue(PreferenceName.DEFAULT_WORKITEM_COB_HOURS)),
-                int.Parse(_model.GetAppPreferenceValue(PreferenceName.DEFAULT_WORKITEM_COB_MINS)), 
+                int.Parse(_model.GetAppPreferenceValue(PreferenceName.DEFAULT_WORKITEM_COB_MINS)),
                 0);
 
-            if (_model.GetAppPreferenceValue(PreferenceName.DUE_DATE_CAN_BE_WEEKENDS).Equals("0"))
+            if (_model.GetAppPreferenceAsBooleanValue(PreferenceName.DUE_DATE_CAN_BE_WEEKENDS))
             {
                 if (dueDate.DayOfWeek == DayOfWeek.Saturday)
                 {
                     dueDate = dueDate.AddDays(2);
                 }
-                else if (dueDate.DayOfWeek == DayOfWeek.Sunday) {
+                else if (dueDate.DayOfWeek == DayOfWeek.Sunday)
+                {
                     dueDate = dueDate.AddDays(1);
                 }
             }
-            wi.DueDate = dueDate;
 
-            // Get the default active Status (note due to DB constraints there can only be one).
-            WorkItemStatus wis = GetWorkItemStatuses(true, true).ToArray()[0];
-            wi.Status = wis.Status;
-            wi.IsConsideredActive = wis.IsConsideredActive;
-
-            _model.FireCreateNewWorkItem(wi);
+            return dueDate;
         }
 
         public void AddJournalEntry(WorkItem wi, JournalEntry entry)
@@ -543,11 +554,13 @@ namespace MyWorkTracker.Code
                   <StatusChanges WorkItem_ID="1">
                     <StatusChange WorkItemStatus_ID="1">
                       <Status_ID>1</Status_ID>
+                      <CompletionAmount>100</CompletionAmount>
                       <CreationDate>2019-08-03T04:28:04</CreationDate>
                       <DeletionDate>2019-08-03T04:28:04</DeletionDate>
                     </StatusChange>
                     <StatusChange WorkItemStatus_ID="3">
                       <Status_ID>1</Status_ID>
+                      <CompletionAmount>30</CompletionAmount>
                       <CreationDate>2019-08-05T08:27:30</CreationDate>
                     </StatusChange>
                 ...
@@ -608,6 +621,11 @@ namespace MyWorkTracker.Code
                             {
                                 creationDateTime = Convert.ToDateTime(reader["CreationDateTime"].ToString());
                             }
+                            DateTime? modificationDateTime = null;
+                            if (reader["ModificationDateTime"] != DBNull.Value)
+                            {
+                                modificationDateTime = Convert.ToDateTime(reader["ModificationDateTime"].ToString());
+                            }
                             DateTime? deletionDateTime = null;
                             if (reader["DeletionDateTime"] != DBNull.Value)
                             {
@@ -615,8 +633,11 @@ namespace MyWorkTracker.Code
                             }
 
                             XElement workItemStatusChangeXML = new XElement(new XElement("StatusChange", new XAttribute("WorkItemStatus_ID", Convert.ToInt32(reader["WorkItemStatus_ID"]))));
-                            workItemStatusChangeXML.Add(new XElement("Status_ID", Convert.ToInt32(reader["Status_ID"])),
+                            workItemStatusChangeXML.Add(
+                                new XElement("Status_ID", Convert.ToInt32(reader["Status_ID"])),
+                                new XElement("CompletionAmount", Convert.ToInt32(reader["CompletionAmount"])),
                                 new XElement("CreationDate", creationDateTime),
+                                new XElement("ModificationDateTime", modificationDateTime),
                                 new XElement("DeletionDate", deletionDateTime));
                             workItemStatusXML.Add(workItemStatusChangeXML);
                         }
@@ -647,7 +668,6 @@ namespace MyWorkTracker.Code
              *      <WorkItem WorkItem_ID="1">
              *      <Title>Application of Sensitivity Requested</Title>
              *      <Description>This is the description</Description>
-             *      <Complete>100</Complete>
              *      <CreationDate>2019-08-03T04:28:03</CreationDate>
              *      <DeletionDate />
              *      </WorkItem>
@@ -687,7 +707,6 @@ namespace MyWorkTracker.Code
                                 new XAttribute("LastWorkItemStatus_ID", Convert.ToInt32(reader["Status_ID"])),
                                 new XElement("Title", (string)reader["TaskTitle"]),
                                 new XElement("Description", (string)reader["TaskDescription"]),
-                                new XElement("Complete", Convert.ToInt32(reader["Complete"])),
                                 new XElement("CreationDate", Convert.ToDateTime(reader["CreationDateTime"])), 
                                 new XElement("DeletionDate", deletionDateTime));
                             allWorkItemsXML.Add(workItemXML);
@@ -821,6 +840,33 @@ namespace MyWorkTracker.Code
             _model.FireWorkItemStatusChange(wi, newWorkItemStatus, oldStatus);
         }
 
+        /// <summary>
+        /// Returns the WorkItemStatus as specified by the status ID.
+        /// </summary>
+        /// <param name="statusID"></param>
+        /// <returns></returns>
+        public WorkItemStatus GetWorkItemStatus(int statusID)
+        {
+            WorkItemStatus rValue = null;
+
+            // TODO replace with LINQ
+            foreach (WorkItemStatus wis in _model.GetWorkItemStatuses())
+            {
+                if (wis.WorkItemStatusID == statusID)
+                {
+                    rValue = wis;
+                    break;
+                }
+            }
+
+            return rValue;
+        }
+
+        /// <summary>
+        /// Returns the WorkItemStatus as specified by the status string.
+        /// </summary>
+        /// <param name="status"></param>
+        /// <returns></returns>
         public WorkItemStatus GetWorkItemStatus(string status)
         {
             WorkItemStatus rValue = null;
@@ -920,7 +966,6 @@ namespace MyWorkTracker.Code
                                 wi.CreateDateTime = DateTime.Parse(reader["CreationDateTime"].ToString());
                                 if (reader["TaskDescription"].GetType() != typeof(DBNull))
                                     wi.TaskDescription = (string)reader["TaskDescription"];
-                                wi.Completed = Convert.ToInt32(reader["Complete"]);
 
                                 if (reader["DueDateTime"] != DBNull.Value)
                                     wi.DueDate = DateTime.Parse(reader["DueDateTime"].ToString());
@@ -928,9 +973,33 @@ namespace MyWorkTracker.Code
                                 if (reader["DueDateCreationDateTime"] != DBNull.Value)
                                 wi.Meta.DueDateUpdateDateTime = DateTime.Parse(reader["DueDateCreationDateTime"].ToString());
 
-                                wi.Status = reader["StatusLabel"].ToString();
-                                wi.Meta.StatusUpdateDateTime = DateTime.Parse(reader["StatusDateTime"].ToString());
-                                wi.IsConsideredActive = Boolean.Parse(reader["IsConsideredActive"].ToString());
+                                wi.Status = reader["wisStatusLabel"].ToString();
+                                wi.Meta.StatusUpdateDateTime = DateTime.Parse(reader["wisStatusDateTime"].ToString());
+                                wi.IsConsideredActive = Boolean.Parse(reader["wisIsConsideredActive"].ToString());
+
+                                // --- WorkItemStatus ----
+                                int statusID = Convert.ToInt32(reader["wisStatus_ID"]);
+                                wi.workItemStatus = GetWorkItemStatus(statusID);
+                                Console.WriteLine($"---> Status ID #{statusID}, {wi.workItemStatus}");
+
+                                // --- WorkItemStatusEntry ----
+                                DateTime? wiseCreationDateTime = null;
+                                if (reader["wisCreationDateTime"] != DBNull.Value)
+                                    wiseCreationDateTime = DateTime.Parse(reader["wisCreationDateTime"].ToString());
+
+                                DateTime? wiseModificationDateTime = null;
+                                if (reader["wisModificationDateTime"] != DBNull.Value)
+                                    wiseModificationDateTime = DateTime.Parse(reader["wisModificationDateTime"].ToString());
+
+                                WorkItemStatusEntry wise = new WorkItemStatusEntry(wiseID: Convert.ToInt32(reader["wis_ID"]),
+                                    wiID: Convert.ToInt32(reader["WorkItem_ID"]),
+                                    statusID: statusID,
+                                    completionAmount: Convert.ToInt32(reader["CompletionAmount"]),
+                                    creationDateTime: wiseCreationDateTime,
+                                    modificationDateTime: wiseModificationDateTime
+                                );
+                                wi.WorkItemStatusEntry = wise;
+
                                 _model.AddWorkItem(wi, false, false);
                             }
                             else
@@ -961,25 +1030,25 @@ namespace MyWorkTracker.Code
                         // WorkItem
                         cmd.CommandText = "UPDATE WorkItem SET DeletionDateTime = @now WHERE WorkItem_ID = @workItemID";
                         cmd.Parameters.AddWithValue("@workItemID", wi.Meta.WorkItem_ID);
-                        cmd.Parameters.AddWithValue("@now", DateMethods.FormatSQLDateTime(DateTime.Now));
+                        cmd.Parameters.AddWithValue("@now", DateTime.Now);
                         cmd.ExecuteNonQuery();
 
                         // WorkItemStatus
                         cmd.CommandText = "UPDATE WorkItemStatus SET DeletionDateTime = @now WHERE WorkItem_ID = @workItemID";
                         cmd.Parameters.AddWithValue("@workItemID", wi.Meta.WorkItem_ID);
-                        cmd.Parameters.AddWithValue("@now", DateMethods.FormatSQLDateTime(DateTime.Now));
+                        cmd.Parameters.AddWithValue("@now", DateTime.Now);
                         cmd.ExecuteNonQuery();
 
                         // Due Date
                         cmd.CommandText = "UPDATE DueDate SET DeletionDateTime = @now WHERE WorkItem_ID = @workItemID";
                         cmd.Parameters.AddWithValue("@workItemID", wi.Meta.WorkItem_ID);
-                        cmd.Parameters.AddWithValue("@now", DateMethods.FormatSQLDateTime(DateTime.Now));
+                        cmd.Parameters.AddWithValue("@now", DateTime.Now);
                         cmd.ExecuteNonQuery();
 
                         // Journal
                         cmd.CommandText = "UPDATE Journal SET DeletionDateTime = @now WHERE WorkItem_ID = @workItemID";
                         cmd.Parameters.AddWithValue("@workItemID", wi.Meta.WorkItem_ID);
-                        cmd.Parameters.AddWithValue("@now", DateMethods.FormatSQLDateTime(DateTime.Now));
+                        cmd.Parameters.AddWithValue("@now", DateTime.Now);
                         cmd.ExecuteNonQuery();
                     }
                     else // Physical delete
@@ -1100,12 +1169,13 @@ namespace MyWorkTracker.Code
         }
 
         /// <summary>
-        /// Inserts a DB record for a WorkItemStatus.
+        /// Inserts a database record for a WorkItemStatus.
+        /// CompletionAmount is automatically set to 0.
         /// </summary>
         /// <param name="wi"></param>
         /// <param name="status"></param>
         /// <returns>Returns the WorkItemStatus ID on insert, or -1</returns>
-        public int InsertDBWorkItemStatus(WorkItem wi, string status)
+        public int InsertDBWorkItemStatusEntry(WorkItem wi, string status)
         {
             WorkItemStatus wis = GetWorkItemStatus(status);
             int workItemStatusID = -1;
@@ -1114,11 +1184,12 @@ namespace MyWorkTracker.Code
                 using (var cmd = new SQLiteCommand(connection))
                 {
                     connection.Open();
-                    cmd.CommandText = "INSERT INTO WorkItemStatus (WorkItem_ID, Status_ID, CreationDateTime) " +
-                        "VALUES (@workItemID, @statusID, @creation)";
+                    cmd.CommandText = "INSERT INTO WorkItemStatus (WorkItem_ID, Status_ID, CompletionAmount, CreationDateTime) " +
+                        "VALUES (@workItemID, @statusID, @completionAmount, @creation)";
                     cmd.Parameters.AddWithValue("@workItemID", wi.Meta.WorkItem_ID);
                     cmd.Parameters.AddWithValue("@statusID", wis.WorkItemStatusID);
-                    cmd.Parameters.AddWithValue("@creation", DateMethods.FormatSQLDateTime(DateTime.Now));
+                    cmd.Parameters.AddWithValue("@completionAmount", 0);
+                    cmd.Parameters.AddWithValue("@creation", DateTime.Now);
                     cmd.ExecuteNonQuery();
 
                     // Get the identity value
@@ -1134,35 +1205,108 @@ namespace MyWorkTracker.Code
         }
 
         /// <summary>
-        /// Inserts a DB record for a WorkItemStatus.
+        /// Inserts a DB record for a WorkItemStatusEntry.
         /// </summary>
-        /// <param name="wis"></param>
+        /// <param name="wise"></param>
         /// <returns></returns>
-        public int InsertDBWorkItemStatus(WorkItemStatusEntry wis)
+        private int InsertDBWorkItemStatusEntry(WorkItemStatusEntry wise)
         {
+            if (wise.CreationDateTime.HasValue == false)
+            {
+                wise.CreationDateTime = DateTime.Now;
+            }
+
             int workItemStatusID = -1;
             using (var connection = new SQLiteConnection(dbConnectionString))
             {
                 using (var cmd = new SQLiteCommand(connection))
                 {
                     connection.Open();
-                    cmd.CommandText = "INSERT INTO WorkItemStatus (WorkItem_ID, Status_ID, CreationDateTime) " +
-                        "VALUES (@workItemID, @statusID, @creation)";
-                    cmd.Parameters.AddWithValue("@workItemID", wis.WorkItemID);
-                    cmd.Parameters.AddWithValue("@statusID", wis.StatusID);
-                    cmd.Parameters.AddWithValue("@creation", wis.CreationDateTime);
+                    cmd.CommandText = "INSERT INTO WorkItemStatus (WorkItem_ID, Status_ID, CompletionAmount, CreationDateTime) " +
+                        "VALUES (@workItemID, @statusID, @completionAmount, @creation)";
+                    cmd.Parameters.AddWithValue("@workItemID", wise.WorkItemID);
+                    cmd.Parameters.AddWithValue("@statusID", wise.StatusID);
+                    cmd.Parameters.AddWithValue("@completionAmount", wise.CompletionAmount);
+                    cmd.Parameters.AddWithValue("@creation", wise.CreationDateTime);
                     cmd.ExecuteNonQuery();
 
                     // Get the identity value
                     cmd.CommandText = "SELECT last_insert_rowid()";
                     workItemStatusID = (int)(Int64)cmd.ExecuteScalar();
-                    wis.WorkItemStatusID = workItemStatusID;
+                    wise.WorkItemStatusEntryID = workItemStatusID;
                 }
                 connection.Close();
             }
             return workItemStatusID;
         }
 
+        /// <summary>
+        /// Update a DB record for a WorkItemStatusEntry.
+        /// Note that updates should occur when it's the same day.
+        /// </summary>
+        /// <param name="wise"></param>
+        private void UpdateDBWorkItemStatusEntry(WorkItemStatusEntry wise)
+        {
+            if (wise.RecordExists == false) throw new ArgumentException("UpdateDBWorkItemStatusEntry() cannot be called on a record not yet in the database.");
+
+            wise.ModificationDateTime = DateTime.Now;
+
+            using (var connection = new SQLiteConnection(dbConnectionString))
+            {
+                using (var cmd = new SQLiteCommand(connection))
+                {
+                    connection.Open();
+                    cmd.CommandText = "UPDATE WorkItemStatus " +
+                        "SET Status_ID = @statusID, " +
+                        "CompletionAmount = @completionAmount, " +
+                        "ModificationDateTime = @modificationDateTime " +
+                        "WHERE WorkItemStatus_ID = @workItemStatusID";
+                    cmd.Parameters.AddWithValue("@statusID", wise.StatusID);
+                    cmd.Parameters.AddWithValue("@completionAmount", wise.CompletionAmount);
+                    cmd.Parameters.AddWithValue("@modificationDateTime", wise.ModificationDateTime);
+                    cmd.Parameters.AddWithValue("@workItemStatusID", wise.WorkItemStatusEntryID);
+                    cmd.ExecuteNonQuery();
+                }
+                connection.Close();
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="wi"></param>
+        /// <param name="completionAmount"></param>
+        /// <param name="statusID"></param>
+        /// <returns></returns>
+        public int InsertOrUpdateDBWorkItemStatusEntry(WorkItem wi, int completionAmount, int statusID)
+        {
+            int rValue = -1;
+
+            // If the WorkItemStatusEntry hasn't been entered into the database yet,
+            //      or if it has, but on a different day... then INSERT
+            if ((wi.WorkItemStatusEntry == null)
+                || ((wi.WorkItemStatusEntry.ModificationDateTime.HasValue) && (wi.WorkItemStatusEntry.ModificationDateTime.Value.Date != DateTime.Now.Date)))
+            { // No record exists, so insert one.
+                InsertDBWorkItemStatusEntry(new WorkItemStatusEntry(wi.Meta.WorkItem_ID, wi.WorkItemStatusEntry.StatusID, completionAmount, DateTime.Now));
+            }
+            else
+            {
+                WorkItemStatusEntry wise = wi.WorkItemStatusEntry;
+                wise.CompletionAmount = completionAmount;
+                wise.StatusID = statusID;
+                wise.ModificationDateTime = DateTime.Now;
+                UpdateDBWorkItemStatusEntry(wise);
+            }
+
+            return rValue;
+        }
+
+        /// <summary>
+        /// Insert a WorkItemStatus to the database.
+        /// (This is NOT related to a WorkItem; see InsertDBWorkItemStatusEntry() for that).
+        /// </summary>
+        /// <param name="wis"></param>
+        /// <returns></returns>
         public int InsertDBWorkItemStatus(WorkItemStatus wis)
         {
             int workItemStatusID = -1;
@@ -1335,8 +1479,8 @@ namespace MyWorkTracker.Code
         }
 
         /// <summary>
-        /// Inserts a WorkTask into the database, returning the rowID of the inserted record.
-        /// This does not add an associated DueDate or any Log records.
+        /// Inserts a WorkItem into the database, returning the rowID of the inserted record.
+        /// This method also adds associated DueDate and WorkItemStatus records.
         /// </summary>
         /// <param name="wi"></param>
         /// <returns></returns>
@@ -1348,11 +1492,10 @@ namespace MyWorkTracker.Code
                 using (var cmd = new SQLiteCommand(connection))
                 {
                     connection.Open();
-                    cmd.CommandText = "INSERT INTO WorkItem (TaskTitle, TaskDescription, Complete, CreationDateTime) " +
-                        "VALUES (@title, @desc, @completed, @creation)";
+                    cmd.CommandText = "INSERT INTO WorkItem (TaskTitle, TaskDescription, CreationDateTime) " +
+                        "VALUES (@title, @desc, @creation)";
                     cmd.Parameters.AddWithValue("@title", wi.Title);
                     cmd.Parameters.AddWithValue("@desc", wi.TaskDescription);
-                    cmd.Parameters.AddWithValue("@completed", wi.Completed);
                     cmd.Parameters.AddWithValue("@creation", wi.CreateDateTime);
                     cmd.ExecuteNonQuery();
 
@@ -1360,17 +1503,17 @@ namespace MyWorkTracker.Code
                     cmd.CommandText = "SELECT last_insert_rowid()";
                     workItemID = (int)(Int64)cmd.ExecuteScalar();
                     wi.Meta.WorkItem_ID = workItemID;
+                    wi.WorkItemStatusEntry.WorkItemID = workItemID;
 
                     // Save the Due Date
                     if (wi.DueDate > DateTime.MinValue)
                     {
-                        int dueDateID = InsertDBDueDate(wi, wi.DueDate, "Initial WorkItem created.");
+                        wi.Meta.DueDate_ID = InsertDBDueDate(wi, wi.DueDate, "Initial WorkItem created.");
                     }
 
-                    // Save the Status
-                    if (wi.Status.Equals("") == false)
+                    if (wi.WorkItemStatusEntry.WorkItemStatusEntryID == -1)
                     {
-                        InsertDBWorkItemStatus(wi, wi.Status);
+                        InsertDBWorkItemStatusEntry(wi.WorkItemStatusEntry);
                     }
                 }
                 connection.Close();
@@ -1392,12 +1535,10 @@ namespace MyWorkTracker.Code
                     connection.Open();
                     cmd.CommandText = "UPDATE WorkItem " +
                         "SET TaskTitle = @title, " +
-                        "TaskDescription = @desc, " +
-                        "Complete = @completed " +
+                        "TaskDescription = @desc " +
                         "WHERE WorkItem_ID = @workItemID";
                     cmd.Parameters.AddWithValue("@title", wi.Title);
                     cmd.Parameters.AddWithValue("@desc", wi.TaskDescription);
-                    cmd.Parameters.AddWithValue("@completed", wi.Completed);
                     cmd.Parameters.AddWithValue("@workItemID", wi.Meta.WorkItem_ID);
                     cmd.ExecuteNonQuery();
 
@@ -1427,9 +1568,9 @@ namespace MyWorkTracker.Code
                     cmd.CommandText = "INSERT INTO DueDate (WorkItem_ID, DueDateTime, ChangeReason, CreationDateTime)" +
                         "VALUES (@WorkItemID, @NewDueDate, @ChangeReason, @CreationDateTime)";
                     cmd.Parameters.AddWithValue("@WorkItemID", workItem.Meta.WorkItem_ID);
-                    cmd.Parameters.AddWithValue("@NewDueDate", DateMethods.FormatSQLDateTime(newDueDate));
+                    cmd.Parameters.AddWithValue("@NewDueDate", newDueDate);
                     cmd.Parameters.AddWithValue("@ChangeReason", changeReason);
-                    cmd.Parameters.AddWithValue("@CreationDateTime", DateMethods.FormatSQLDateTime(DateTime.Now));
+                    cmd.Parameters.AddWithValue("@CreationDateTime", DateTime.Now);
                     cmd.ExecuteNonQuery();
 
                     // Get the identity value
@@ -1465,7 +1606,7 @@ namespace MyWorkTracker.Code
                         "WHERE DueDate_ID = @DueDateID";
                     cmd.Parameters.AddWithValue("@DueDate", newDueDate);
                     cmd.Parameters.AddWithValue("@ChangeReason", changeReason);
-                    cmd.Parameters.AddWithValue("@CreateDateTime", DateMethods.FormatSQLDateTime(DateTime.Now));
+                    cmd.Parameters.AddWithValue("@CreateDateTime", DateTime.Now);
                     cmd.Parameters.AddWithValue("@DueDateID", workItem.Meta.DueDate_ID);
                     cmd.ExecuteNonQuery();
                 }

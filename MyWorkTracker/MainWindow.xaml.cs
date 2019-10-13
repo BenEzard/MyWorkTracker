@@ -33,7 +33,7 @@ namespace MyWorkTracker
             Overview.ItemsSource = _model.GetActiveWorkItems();
             ClosedListView.ItemsSource = _model.GetClosedWorkItems();  //_model.GetWorkItems();
 
-            WorkItemStatus.ItemsSource = _model.GetWorkItemStatuses();
+            WorkItemStatusComboBox.ItemsSource = _model.GetWorkItemStatuses();
 
             // Set the application name and version.
             this.Title = $"{_model.GetAppPreferenceValue(PreferenceName.APPLICATION_NAME)} [v{_model.GetAppPreferenceValue(PreferenceName.APPLICATION_VERSION)}]";
@@ -57,17 +57,6 @@ namespace MyWorkTracker
         }
 
         /// <summary>
-        /// Highlight a button with the specified background colour.
-        /// </summary>
-        /// <param name="b"></param>
-        /// <param name="backgroundBrush"></param>
-        private void HighlightButton(Button b, Brush backgroundBrush)
-        {
-            b.Background = backgroundBrush;
-            b.Foreground = Brushes.White;
-        }
-
-        /// <summary>
         /// A listener method for the AppEvents.
         /// This method handles all of the AppEvents that are fired from the model.
         /// </summary>
@@ -78,8 +67,12 @@ namespace MyWorkTracker
             switch(args.Action)
             {
                 case AppAction.CREATE_WORK_ITEM:
-                    WorkItemStatus.SelectedItem = _controller.GetWorkItemStatus(_model.SelectedWorkItem.Status);
+                    // Change the Combobox that shows the Status of the currently selected item.
+                    WorkItemStatusComboBox.SelectedItem = _controller.GetWorkItemStatus(_model.SelectedWorkItem.workItemStatus.Status);
+
                     _model.IsBindingLoading = false;
+
+                    // Move the cursor to the Task Title field.
                     SelectedTaskTitleField.Focus();
 
                     _model.SetApplicationMode(DataEntryMode.ADD);
@@ -112,8 +105,15 @@ namespace MyWorkTracker
                         }
                     }
 
+                    // ---
+                    Console.WriteLine($"WorkItemStatusID = {wi.Meta.WorkItemStatus_ID}; WorkItemStatusEntryID={wi.WorkItemStatusEntry.WorkItemStatusEntryID}; FlaggedForUpdate={wi.Meta.WorkItemStatusNeedsUpdate}; Status={wi.Status}; Completion={wi.Completed};");
+                    Console.WriteLine($"WorkItemStatusEntryID={wi.WorkItemStatusEntry.WorkItemStatusEntryID}; StatusID={wi.WorkItemStatusEntry.StatusID}; CompletionAmount={wi.WorkItemStatusEntry.CompletionAmount} RecordExists={wi.WorkItemStatusEntry.RecordExists}");
+                    // WorkItemStatusID = 0; WorkItemStatusEntryID = 9; FlaggedForUpdate = False; Status = Active; Completion = 0;
+                    // WorkItemStatusEntryID = 9; StatusID = 1; CompletionAmount = 0 RecordExists = True
+                    // ---
+
                     // Set the Work Item Status & the DueInDays control to the values of the selected WorkItem
-                    WorkItemStatus.SelectedItem = _controller.GetWorkItemStatus(wi.Status);
+                    WorkItemStatusComboBox.SelectedItem = _controller.GetWorkItemStatus(wi.Status);
                     DueInDaysTextField.Text = DateMethods.GenerateDateDifferenceLabel(DateTime.Now, _model.SelectedWorkItem.DueDate, true);
 
                     // Check to see if the Journal entries for this Work Item have been loaded. Load them if not.
@@ -163,6 +163,7 @@ namespace MyWorkTracker
                                 // If it's Active (i.e. not Completed) and at 100% progress then set it back to 95%
                                 // (This is to prevent a Completed-then-Active being auto-set back to Completed when loaded again)
                                 WorkItemProgressSlider.IsEnabled = true;
+                                //if (wi2.Completed == 100)
                                 if (wi2.Completed == 100)
                                 {
                                     string strValue = _model.GetAppPreferenceValue(PreferenceName.STATUS_ACTIVE_TO_COMPLETE_PCN);
@@ -185,8 +186,6 @@ namespace MyWorkTracker
 
                         Overview.Background = Brushes.WhiteSmoke;
 
-                        HighlightButton(SaveButton, Brushes.Green);
-                        HighlightButton(CancelButton, Brushes.Red);
                         SaveButton.Content = "Create Work Item";
                     }
                     else if (_model.GetApplicationMode() == DataEntryMode.EDIT)
@@ -327,7 +326,7 @@ namespace MyWorkTracker
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void SaveButton_Click(object sender, RoutedEventArgs e)
+        private void SaveWorkItemButton_Click(object sender, RoutedEventArgs e)
         {
             WorkItem selectedWorkItem = _model.SelectedWorkItem;
 
@@ -355,8 +354,9 @@ namespace MyWorkTracker
                 }
                 if (selectedWorkItem.Meta.WorkItemStatusNeedsUpdate)
                 {
-                    var wis = (WorkItemStatus)WorkItemStatus.SelectedItem;
-                    _controller.InsertDBWorkItemStatus(selectedWorkItem, wis.Status);
+                    var wis = (WorkItemStatus)WorkItemStatusComboBox.SelectedItem;
+                    int completion = (int)WorkItemProgressSlider.Value;
+                    _controller.InsertOrUpdateDBWorkItemStatusEntry(selectedWorkItem, completion, wis.WorkItemStatusID);
                 }
             }
         }
@@ -405,7 +405,7 @@ namespace MyWorkTracker
             if (e.NewValue == 100)
             {
                 var s = _controller.GetWorkItemStatuses(false, true).ToArray();
-                WorkItemStatus.SelectedValue = _controller.GetWorkItemStatuses(false, true).ToArray()[0];
+                WorkItemStatusComboBox.SelectedValue = _controller.GetWorkItemStatuses(false, true).ToArray()[0];
             }
 
             if (_model.SelectedWorkItem != null)
@@ -416,7 +416,7 @@ namespace MyWorkTracker
         {
             if (_model.SelectedWorkItem != null)
             {
-                WorkItemStatus wis = (WorkItemStatus)WorkItemStatus.SelectedItem;
+                WorkItemStatus wis = (WorkItemStatus)WorkItemStatusComboBox.SelectedItem;
                 _controller.SetWorkItemStatus(_model.SelectedWorkItem, wis);
             }
         }

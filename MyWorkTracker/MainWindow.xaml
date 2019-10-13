@@ -18,7 +18,7 @@
         <ToolBarTray DockPanel.Dock="Top" Margin="0">
             <ToolBar Band="1" BandIndex="1">
                 <Button Name="NewWorkItemButton" Click="CreateNewWorkItemSelected" 
-                        VerticalAlignment="Top">
+                        VerticalAlignment="Bottom">
                     <StackPanel Orientation="Horizontal">
                         <Image Source="Images\report_add.png" Width="26" ToolTip="New Work Item" />
                     </StackPanel>
@@ -109,7 +109,7 @@
                                             HorizontalAlignment="Center" VerticalAlignment="Top" Height="50" />
                                     <TextBlock Text="{Binding DueDate, StringFormat=\{0:ddd dd/MM HH:mm\}}" 
                                                Grid.Column="1" Grid.Row="1" />
-                                    <TextBlock Text="{Binding Status}" Margin="0" Padding="0"
+                                    <TextBlock Text="{Binding Status}" Margin="0" Padding="0" 
                                                Grid.Column="1" Grid.Row="2" />
                                     <ProgressBar Value="{Binding Completed}"
                                         Grid.Column="1" Grid.Row="3"
@@ -309,7 +309,7 @@
                                 Minimum="0" Maximum="100" Width="120" />
                     <TextBlock Padding="5,5,5,5" VerticalAlignment="Center"
                                Visibility="{Binding IsApplicationInEditMode, Converter={StaticResource BooleanToVisibilityConverter}}">Status</TextBlock>
-                    <ComboBox Name="WorkItemStatus" SelectionChanged="WorkItemStatusChanged"
+                    <ComboBox Name="WorkItemStatusComboBox" SelectionChanged="WorkItemStatusChanged"
                               VerticalAlignment="Center"
                               Visibility="{Binding IsApplicationInEditMode, Converter={StaticResource BooleanToVisibilityConverter}}"
                               IsEditable="False" IsEnabled="{Binding IsApplicationInEditMode}" 
@@ -320,8 +320,8 @@
                     <Button Name="CancelButton" 
                             IsEnabled="{Binding IsApplicationInAddMode}" Visibility="{Binding IsApplicationInAddMode, Converter={StaticResource BooleanToVisibilityConverter}}" Click="CancelButton_Click"
                             Content="Cancel" Margin="5" Padding="5" />
-                    <Button Name="SaveButton" 
-                            Click="SaveButton_Click" IsEnabled="{Binding IsApplicationInAddMode}" Visibility="{Binding IsApplicationInAddMode, Converter={StaticResource BooleanToVisibilityConverter}}"
+                    <Button Name="SaveButton" Click="SaveWorkItemButton_Click" 
+                            IsEnabled="{Binding IsApplicationInAddMode}" Visibility="{Binding IsApplicationInAddMode, Converter={StaticResource BooleanToVisibilityConverter}}"
                             Content="Save" Margin="5" Padding="5" />
                 </StackPanel>
 

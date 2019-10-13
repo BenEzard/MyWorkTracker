@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
@@ -14,8 +13,19 @@ namespace MyWorkTracker.Code
 
         private string _title = "";
         private string _taskDescription = "";
+
+        [Obsolete("Deprecate; to be removed, if LINQ can access _wiStatus members.")]
         private string _status = "";
-        private int _amountComplete = 0;
+
+        /// <summary>
+        /// The WorkItemStatus appropriate to the WorkItem.
+        /// (Note that this should NOT be created 'new', and should instead reference the collection held in the model).
+        /// </summary>
+        public WorkItemStatus workItemStatus { get; set; }
+
+
+        public WorkItemStatusEntry WorkItemStatusEntry { get; set; }
+        
         public DateTime CreateDateTime { get; set; } = DateTime.Now;
         public DateTime DeleteDateTime { get; set; }
 
@@ -25,6 +35,7 @@ namespace MyWorkTracker.Code
         /// Is this WorkItem considered active?
         /// This variable is a convenience variable so this object can be selected using LINQ.
         /// </summary>
+        [Obsolete("Deprecate; to be removed, if LINQ can access _wiStatus members.")]
         private bool _isConsideredActive = false;
 
         public ObservableCollection<JournalEntry> Journals = new ObservableCollection<JournalEntry>();
@@ -32,6 +43,16 @@ namespace MyWorkTracker.Code
         public WorkItem()
         {
 
+        }
+
+        /// <summary>
+        /// Create a new WorkItem, assigning the specified WorkItemStatus.
+        /// </summary>
+        /// <param name="wis"></param>
+        public WorkItem(WorkItemStatus wis)
+        {
+            workItemStatus = wis;
+            WorkItemStatusEntry = new WorkItemStatusEntry(wis.WorkItemStatusID);
         }
 
         /// <summary>
@@ -103,12 +124,29 @@ namespace MyWorkTracker.Code
             }
         }
 
-        public int Completed
+        
+/*        public bool IsConsideredActive
         {
-            get { return _amountComplete; }
+            get { return workItemStatus.IsConsideredActive; }
             set
             {
-                _amountComplete = value;
+                if (workItemStatus != null)
+                {
+                    workItemStatus.IsConsideredActive = value;
+                    OnPropertyChanged();
+                }
+            }
+        }*/
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public int Completed
+        {
+            get { return WorkItemStatusEntry.CompletionAmount; }
+            set
+            {
+                WorkItemStatusEntry.CompletionAmount = value;
                 OnPropertyChanged();
             }
         }

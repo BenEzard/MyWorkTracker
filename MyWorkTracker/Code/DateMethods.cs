@@ -15,33 +15,6 @@ namespace MyWorkTracker.Code
             return start.AddDays(daysToAdd);
         }
 
-        /// <summary>
-        /// Outputs a date time in SQL format.
-        /// TODO: this should be replaced by something else pre-existing 
-        /// </summary>
-        /// <param name="dt"></param>
-        /// <returns></returns>
-        public static string FormatSQLDateTime(DateTime dt)
-        {
-            string rValue = $"{dt.Year}-";
-            if (dt.Month < 10)
-                rValue += "0";
-            rValue += $"{dt.Month}-";
-            if (dt.Day < 10)
-                rValue += "0";
-            rValue += $"{dt.Day} ";
-            if (dt.Hour < 10)
-                rValue += "0";
-            rValue += $"{dt.Hour}:";
-            if (dt.Minute < 10)
-                rValue += "0";
-            rValue += $"{dt.Minute}:";
-            if (dt.Second < 10)
-                rValue += "0";
-            rValue += $"{dt.Second}.000";
-
-            return rValue;
-        }
 
         public static string FormatSQLDate(DateTime dt)
         {
