@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Data.SQLite;
 using System.Linq;
+using System.Windows;
 using System.Xml.Linq;
 
 namespace MyWorkTracker.Code
@@ -25,12 +26,11 @@ namespace MyWorkTracker.Code
             LoadApplicationPreferences();
             LoadWorkItemStatusesFromDB();
 
-            LoadWorkItems(300);
+            LoadWorkItems(Int32.Parse(_model.GetAppPreferenceValue(PreferenceName.LOAD_STALE_DAYS)));
         }
 
         /// <summary>
         /// Import data from an XML backup into the system.
-        /// TODO: Should this be implemented in some other way? i.e. a separate class
         /// </summary>
         /// <param name="importFromVersion">The version of the file that we're trying to import.</param>
         /// <param name="loadPreferences"></param>
@@ -38,129 +38,27 @@ namespace MyWorkTracker.Code
         /// <param name="xml"></param>
         public void ImportData(string importFromVersion, Dictionary<PreferenceName, string> loadPreferences, List<WorkItemStatus> importStatuses, XDocument xml)
         {
-            if (importFromVersion.Equals("0.3.0"))
+            IDataImport importerHandler;
+            switch (importFromVersion)
             {
-                // Import any preference changes. 
-                // (Note that the passing method provides an empty collection if we don't want this to happen).
-                if (loadPreferences.Count > 0)
-                {
-                    foreach (PreferenceName key in loadPreferences.Keys)
-                    {
-                        if (_model.GetAppPreferenceValue(key).Equals(loadPreferences[key]) == false)
-                            UpdateAppPreference(key, loadPreferences[key]);
-                    }
-                }
-
-                // Import any WorkItemStatus requirements. 
-                foreach (WorkItemStatus wis in importStatuses)
-                {
-                    WorkItemStatus currentWIS = GetWorkItemStatus(wis.Status);
-                    if (currentWIS != null)
-                    {
-                        // If the two Statuses (system and import) exists, but are not the same...
-                        if (currentWIS.IsSame(wis) == false)
-                        {
-                            wis.Status += " (2)";
-                            wis.WorkItemStatusID = InsertDBWorkItemStatus(wis);
-                        }
-                        else
-                        {
-                            // The Status exists, and is the same as the existing version; set the dbID to be the same as the existing one.
-                            wis.WorkItemStatusID = GetWorkItemStatus(wis.Status).WorkItemStatusID;
-                        }
-                    }
-                    else
-                    { // If the Status doesn't exist, then we want to add it.
-                        wis.WorkItemStatusID = InsertDBWorkItemStatus(wis);
-                    }
-                }
-
-                // Import the Work Items.
-                var query1 = from element in xml.Descendants("WorkItem")
-                             select element;
-
-                foreach (var el3 in query1)
-                {
-                    int importedWorkID = Int32.Parse(el3.Attribute("WorkItem_ID").Value);
-                    WorkItem wi = new WorkItem
-                    {
-                        Title = el3.Element("Title").Value,
-                        TaskDescription = el3.Element("Description").Value,
-                        Completed = Int32.Parse(el3.Element("Complete").Value),
-                        CreateDateTime = DateTime.Parse(el3.Element("CreationDate").Value)
-                    };
-
-                    if ((el3.Element("DeletionDate").Value != null) && (el3.Element("DeletionDate").Value.Equals("") == false))
-                        wi.DeleteDateTime = DateTime.Parse(el3.Element("DeletionDate").Value);
-
-                    wi.Meta.WorkItem_ID = InsertDBWorkItem(wi);
-
-                    // Work Item Status
-                    var query2 = from element in el3.Descendants("StatusChange")
-                                 where Int32.Parse(el3.Attribute("WorkItem_ID").Value) == importedWorkID
-                                 select element;
-                    foreach (var el2 in query2)
-                    {
-                        int statusID = Int32.Parse(el2.Element("Status_ID").Value);
-                        var wiseCreateDateTime = DateTime.Parse(el2.Element("CreationDate").Value);
-
-                        DateTime? DeleteDateTime = null;
-                        if ((el3.Element("DeletionDate").Value != null) && (el2.Element("DeletionDate").Value.Equals("") == false))
-                            DeleteDateTime = DateTime.Parse(el2.Element("DeletionDate").Value);
-
-                        WorkItemStatusEntry wise = new WorkItemStatusEntry(wi.Meta.WorkItem_ID, statusID, wiseCreateDateTime, DeleteDateTime);
-                        InsertDBWorkItemStatusEntry(wise);
-                    }
-
-                    // Due Dates
-                    var query3 = from element in el3.Descendants("DueDateChange")
-                                 where Int32.Parse(el3.Attribute("WorkItem_ID").Value) == importedWorkID
-                                 select element;
-                    foreach (var el2 in query3)
-                    {
-                        DateTime dueDateTime = DateTime.Parse(el2.Element("DueDateTime").Value);
-                        string changeReason = (string)el2.Element("ChangeReason").Value;
-                        DateTime? DeleteDateTime = null;
-                        if ((el3.Element("DeletionDate").Value != null) && (el2.Element("DeletionDate").Value.Equals("") == false))
-                            DeleteDateTime = DateTime.Parse(el2.Element("DeletionDate").Value);
-                        InsertDBDueDate(wi, dueDateTime, changeReason);
-                    }
-
-                    // Journals
-                    var query4 = from element in el3.Descendants("JournalEntry")
-                                 where Int32.Parse(el3.Attribute("WorkItem_ID").Value) == importedWorkID
-                                 select element;
-                    foreach (var el2 in query4)
-                    {
-                        string journalHeader = "";
-                        if (el2.Element("Header").Value != null)
-                            journalHeader = (string)el2.Element("Header").Value;
-
-                        string journalEntry = "";
-                        if (el2.Element("Entry").Value != null)
-                            journalEntry = (string)el2.Element("Entry").Value;
-
-                        DateTime? creationDateTime = null;
-                        if ((el2.Element("CreationDateTime").Value != null) && (el2.Element("CreationDateTime").Value.Equals("") == false))
-                            creationDateTime = DateTime.Parse(el2.Element("CreationDateTime").Value);
-
-                        DateTime? modificationDateTime = null;
-                        if ((el2.Element("ModificationDateTime").Value != null) && (el2.Element("ModificationDateTime").Value.Equals("") == false))
-                            modificationDateTime = DateTime.Parse(el2.Element("ModificationDateTime").Value);
-
-                        DateTime? DeleteDateTime = null;
-                        if ((el2.Element("JournalDeletionDateTime").Value != null) && (el2.Element("JournalDeletionDateTime").Value.Equals("") == false))
-                            DeleteDateTime = DateTime.Parse(el2.Element("JournalDeletionDateTime").Value);
-                        JournalEntry journal = new JournalEntry(journalHeader, journalEntry, creationDateTime, modificationDateTime, DeleteDateTime);
-                        InsertDBJournalEntry(wi.Meta.WorkItem_ID, journal);
-                    }
-
-                } // end - foreach (var el3 in query3)
+                case "0.3.0":
+                    importerHandler = new DataImportZeroThreeZero();
+                    break;
+                case "0.3.1":
+                    importerHandler = new DataImportZeroThreeOne();
+                    break;
+                default:
+                    importerHandler = null;
+                    MessageBox.Show($"There is no support for importing from this version", "Cannot Import");
+                    break;
             }
-            else // TODO improve implementation for non-handled.
-                Console.WriteLine("There is no support for importing from this version");
 
-            LoadWorkItems(Int32.Parse(_model.GetAppPreferenceValue(PreferenceName.LOAD_STALE_DAYS)));
+            if (importerHandler != null)
+            {
+                importerHandler.ImportData(this, importFromVersion, loadPreferences, importStatuses, xml);
+                LoadWorkItems(Int32.Parse(_model.GetAppPreferenceValue(PreferenceName.LOAD_STALE_DAYS)));
+            }
+
         }
 
         public string DBConnectionString => dbConnectionString;
@@ -228,106 +126,30 @@ namespace MyWorkTracker.Code
         }
 
         /// <summary>
-        /// Export the system database to an XML file.
+        /// Export data as XML.
         /// </summary>
-        /// <param name="dbConn">Database Connection string.</param>
-        /// <param name="exportTo">Where to export the file to.</param>
-        /// <param name="exportPreferences">Should Preferences be included in the exported file?</param>
-        /// <param name="exportWorkItemOptionString">What type of Work Items should be exported? Options are: 'all', 'only Active', 'Active plus Closed'</param>
-        /// <param name="daysStale"></param>
-        /// <param name="includeDeleted">Should deleted Work Items be included in the export? 
-        /// (Note that if 'ACTIVE ONLY' is the exportWorkItemOptionString, that will override the deleted option.</param>
-        /// <param name="onlyLastStatus">If true, only the last Status per WorkItem will be included. If false, all Status changes.</param>
-        /// <param name="onlyLastDueDate">If true, only the last DueDate per WorkItem will be included. If false, all Due Date changes.</param>
-        public void ExportToXML(string dbConn, string exportTo, bool exportPreferences, string exportWorkItemOptionString, int daysStale, bool includeDeleted, bool onlyLastStatus, bool onlyLastDueDate)
+        /// <param name="exportVersion"></param>
+        /// <param name="exportSettings"></param>
+        public void ExportToXML(string exportVersion, Dictionary<ExportSetting, string> exportSettings)
         {
-            string workItemIDString = "";
-
-            // Add header stuff
-            // TODO this should be XDocument at top level.
-            XDocument doc = new XDocument();
-            XElement allXML = new XElement(_model.GetAppPreferenceValue(PreferenceName.APPLICATION_NAME),
-                new XAttribute("ApplicationVersion", _model.GetAppPreferenceValue(PreferenceName.APPLICATION_VERSION)), 
-                new XAttribute("ExtractDate", DateTime.Now.ToString()));
-
-            // Get the 'application' sub-tags
-            XElement appXML = new XElement("Application");
-            // --- Get all Settings ------------------------------------------------
-            if (exportPreferences)
+            IDataExport exporterHandler;
+            switch (exportVersion)
             {
-                appXML.Add(GetPreferencesAsXML(dbConn));
-            }
-            // Statuses
-            XElement allStatusesXML = GetStatusTableAsXML(dbConn);
-            appXML.Add(allStatusesXML);
-            allXML.Add(appXML);
-
-            XElement workItemsXML = new XElement("WorkItems");
-
-            // --- Export the data into XML collections ----------------------------
-            // Start with the selected Work Items
-            XElement allWorkItemsXML = null;
-            if (exportWorkItemOptionString.ToUpperInvariant().Equals("ALL")) { // Export all WorkItems.
-                allWorkItemsXML = GetWorkItemTableAsXML(out string str1, dbConn, 
-                    activeOnly: false, daysStale: 9999, includeDeleted: includeDeleted);
-                workItemIDString = ""; // IGNORE the returned str1. We want to output all records, so pass through an empty string of IDs to the rest of the methods.
-            }
-            else if (exportWorkItemOptionString.ToUpperInvariant().Equals("ONLY ACTIVE")) { // Export all WorkItems.
-                allWorkItemsXML = GetWorkItemTableAsXML(out string str2, dbConn, 
-                    activeOnly: true, daysStale:-1, includeDeleted: false);
-                workItemIDString = str2;
-            }
-            else if (exportWorkItemOptionString.ToUpperInvariant().Equals("ACTIVE PLUS CLOSED")) { // Export all WorkItems.
-                allWorkItemsXML = GetWorkItemTableAsXML(out string str3, dbConn, activeOnly: false, daysStale: daysStale, includeDeleted);
-                workItemIDString = str3;
+                case "0.3.0":
+                    exporterHandler = new DataExportZeroThreeZero();
+                    break;
+                case "0.3.1":
+                    exporterHandler = new DataExportZeroThreeOne();
+                    break;
+                default:
+                    exporterHandler = new DataExportZeroThreeZero();
+                    break;
             }
 
-            // Get other data
-            XElement allStatusChangesXML = GetWorkItemStatusTableAsXML(dbConn, onlyLastStatus, workItemIDString);
-            XElement allDueDateXML = GetDueDateTableAsXML(dbConn, workItemIDString, onlyLastDueDate);
-            XElement allJournalsXML = GetJournalTableAsXML(dbConn, includeDeleted, workItemIDString);
-
-            // --- Process the data into the format we want ------------------------
-            IEnumerable<XElement> workItems = from wi in allWorkItemsXML.Elements("WorkItem")
-                                              select wi;
-            foreach (XElement workItemXML in workItems)
-            {
-                // Get all Statuses that relate to that WorkItem
-                IEnumerable<XElement> wiStatusColl = from el2 in allStatusChangesXML.Elements("StatusChanges")
-                where (string)el2.Attribute("WorkItem_ID") == (string)workItemXML.Attribute("WorkItem_ID")
-                                            select el2;
-                foreach (XElement workItemStatusXML in wiStatusColl)
-                {
-                    workItemXML.Add(workItemStatusXML);
-                }
-
-                // Get all the Due Dates that relate to the WorkItem
-                IEnumerable<XElement> wiDueDateColl = from el3 in allDueDateXML.Elements("DueDateChanges")
-                                                     where (string)el3.Attribute("WorkItem_ID") == (string)workItemXML.Attribute("WorkItem_ID")
-                                                     select el3;
-                foreach (XElement workItemDueDateXML in wiDueDateColl)
-                {
-                    workItemXML.Add(workItemDueDateXML);
-                }
-
-                // Get all the Journal Entries that relate to the WorkItem
-                IEnumerable<XElement> wiJEColl = from el4 in allJournalsXML.Elements("JournalEntries")
-                                                      where (string)el4.Attribute("WorkItem_ID") == (string)workItemXML.Attribute("WorkItem_ID")
-                                                      select el4;
-                foreach (XElement workItemJournalXML in wiJEColl)
-                {
-                    workItemXML.Add(workItemJournalXML);
-                }
-                
-                workItemsXML.Add(workItemXML);
-            }
-
-            allXML.Add(workItemsXML);
-            doc.Add(allXML);
-            doc.Save(exportTo);
-            
+            exporterHandler.ExportToXML(_model.GetAppPreferenceValue(PreferenceName.APPLICATION_NAME),
+                _model.GetAppPreferenceValue(PreferenceName.APPLICATION_VERSION), exportSettings);
         }
-
+        
         public Dictionary<PreferenceName, string> GetPreferencesBeginningWith(string startsWith)
         {
             Dictionary<PreferenceName, string> rValue = new Dictionary<PreferenceName, string>();
@@ -341,7 +163,7 @@ namespace MyWorkTracker.Code
             return rValue;
         }
 
-        /// <summary>
+/*        /// <summary>
         /// Export the Journal table as XML format.
         /// </summary>
         /// <param name="dbConnString"></param>
@@ -469,7 +291,7 @@ namespace MyWorkTracker.Code
                  </DueDateChange>
               </DueDateChanges>
              */
-
+/*
             // --- Get all WorkItem Due Dates --------------------------------------
             XElement allDueDatesXML = new XElement("AllDueDateChanges");
             XElement wiDueDatesXML = null;
@@ -567,7 +389,7 @@ namespace MyWorkTracker.Code
                 </StatusChanges>
              </AllStatusChanges>
              */
-
+/*
             // Check to see if the query should be limited by a list of WorkItemIDs.
             bool isLimited = true;
             if (workItemIDs.Equals(""))
@@ -674,7 +496,7 @@ namespace MyWorkTracker.Code
              *      ...
              *      </WorkItems>
              */
-            wiIDString = "";
+        /*    wiIDString = "";
             XElement workItemXML = null;
             XElement allWorkItemsXML = new XElement("WorkItems");
             using (var connection = new SQLiteConnection(dbConnString))
@@ -792,7 +614,7 @@ namespace MyWorkTracker.Code
                 }
             }
             return allStatusesXML;
-        }
+        }*/
 
         /// <summary>
         /// Return WorkItemStatus(es) based on their IsConsideredActive or IsDefault value.
@@ -835,7 +657,10 @@ namespace MyWorkTracker.Code
         {
             WorkItemStatus oldStatus = GetWorkItemStatus(wi.Status);
             wi.Status = newWorkItemStatus.Status;
-            wi.Meta.WorkItemStatusNeedsUpdate = true;
+            if (_model.IsBindingLoading == false)
+            {
+                wi.Meta.WorkItemStatusNeedsUpdate = true;
+            }
             wi.IsConsideredActive = newWorkItemStatus.IsConsideredActive;
             _model.FireWorkItemStatusChange(wi, newWorkItemStatus, oldStatus);
         }
@@ -944,6 +769,8 @@ namespace MyWorkTracker.Code
             // When this is called, first clear any content.
             _model.ClearAllWorkItems();
 
+            Console.WriteLine($"loadAgedDays={loadAgedDays}");
+
             using (var connection = new SQLiteConnection(dbConnectionString))
             {
                 using (var cmd = new SQLiteCommand(connection))
@@ -963,7 +790,7 @@ namespace MyWorkTracker.Code
                                 WorkItem wi = new WorkItem();
                                 wi.Meta.WorkItem_ID = Convert.ToInt32(reader["WorkItem_ID"]);
                                 wi.Title = (string)reader["TaskTitle"];
-                                wi.CreateDateTime = DateTime.Parse(reader["CreationDateTime"].ToString());
+                                wi.CreationDateTime = DateTime.Parse(reader["CreationDateTime"].ToString());
                                 if (reader["TaskDescription"].GetType() != typeof(DBNull))
                                     wi.TaskDescription = (string)reader["TaskDescription"];
 
@@ -980,7 +807,6 @@ namespace MyWorkTracker.Code
                                 // --- WorkItemStatus ----
                                 int statusID = Convert.ToInt32(reader["wisStatus_ID"]);
                                 wi.workItemStatus = GetWorkItemStatus(statusID);
-                                Console.WriteLine($"---> Status ID #{statusID}, {wi.workItemStatus}");
 
                                 // --- WorkItemStatusEntry ----
                                 DateTime? wiseCreationDateTime = null;
@@ -999,12 +825,12 @@ namespace MyWorkTracker.Code
                                     modificationDateTime: wiseModificationDateTime
                                 );
                                 wi.WorkItemStatusEntry = wise;
-
+                                Console.WriteLine($"Loading {(string)reader["TaskTitle"]}");
                                 _model.AddWorkItem(wi, false, false);
                             }
                             else
                             {
-                                // Console.WriteLine($"Not loading {(string)reader["TaskTitle"]} because it's stale.");
+                                Console.WriteLine($"Not loading {(string)reader["TaskTitle"]} because it's stale: {daysStale}.");
                             }
                         }
                     }
@@ -1122,11 +948,17 @@ namespace MyWorkTracker.Code
             if (_model.GetAppPreferenceValue(PreferenceName.DATA_EXPORT_DUEDATE_SELECTION).Equals("latest"))
                 onlyLastDueDate = true;
 
-            string exportWorkItemOptionString = _model.GetAppPreferenceValue(PreferenceName.DATA_EXPORT_WORKITEM_SELECTION);
-            int daysStale = Int32.Parse(_model.GetAppPreferenceValue(PreferenceName.DATA_EXPORT_DAYS_STALE));
-            bool exportPreferences = _model.GetAppPreferenceAsBooleanValue(PreferenceName.DATA_EXPORT_INCLUDE_PREFERENCES);
-            ExportToXML(dbConnectionString, exportToPathAndFile, exportPreferences, exportWorkItemOptionString, daysStale, includeDeleted, onlyLastStatus, onlyLastDueDate);
-            
+            var exportSettings = new Dictionary<ExportSetting, string>();
+            exportSettings.Add(ExportSetting.DATABASE_CONNECTION, dbConnectionString);
+            exportSettings.Add(ExportSetting.EXPORT_TO_LOCATION, exportToPathAndFile);
+            exportSettings.Add(ExportSetting.EXPORT_PREFERENCES, _model.GetAppPreferenceValue(PreferenceName.DATA_EXPORT_INCLUDE_PREFERENCES));
+            exportSettings.Add(ExportSetting.EXPORT_WORK_ITEM_OPTION, _model.GetAppPreferenceValue(PreferenceName.DATA_EXPORT_WORKITEM_SELECTION));
+            exportSettings.Add(ExportSetting.EXPORT_DAYS_STALE, _model.GetAppPreferenceValue(PreferenceName.DATA_EXPORT_DAYS_STALE));
+            exportSettings.Add(ExportSetting.EXPORT_INCLUDE_DELETED, Convert.ToString(includeDeleted));
+            exportSettings.Add(ExportSetting.EXPORT_INCLUDE_LAST_STATUS_ONLY, Convert.ToString(onlyLastStatus));
+            exportSettings.Add(ExportSetting.EXPORT_INCLUDE_LAST_DUEDATE_ONLY, Convert.ToString(onlyLastDueDate));
+            ExportToXML(_model.GetAppPreferenceValue(PreferenceName.DATA_EXPORT_DEFAULT_VERSION), exportSettings);
+
             if (_model.GetAppPreferenceValue(PreferenceName.DATA_EXPORT_COPY_LOCATION).Equals("") == false)
             {
                 string copyLocation = @_model.GetAppPreferenceValue(PreferenceName.DATA_EXPORT_COPY_LOCATION) + '\\' + exportToFilename;
@@ -1209,7 +1041,7 @@ namespace MyWorkTracker.Code
         /// </summary>
         /// <param name="wise"></param>
         /// <returns></returns>
-        private int InsertDBWorkItemStatusEntry(WorkItemStatusEntry wise)
+        public int InsertDBWorkItemStatusEntry(WorkItemStatusEntry wise)
         {
             if (wise.CreationDateTime.HasValue == false)
             {
@@ -1229,7 +1061,7 @@ namespace MyWorkTracker.Code
                     cmd.Parameters.AddWithValue("@completionAmount", wise.CompletionAmount);
                     cmd.Parameters.AddWithValue("@creation", wise.CreationDateTime);
                     cmd.ExecuteNonQuery();
-
+                    Console.WriteLine($"B: Inserted for WorkItem {wise.WorkItemID} a Status ID of {wise.StatusID}");
                     // Get the identity value
                     cmd.CommandText = "SELECT last_insert_rowid()";
                     workItemStatusID = (int)(Int64)cmd.ExecuteScalar();
@@ -1483,8 +1315,9 @@ namespace MyWorkTracker.Code
         /// This method also adds associated DueDate and WorkItemStatus records.
         /// </summary>
         /// <param name="wi"></param>
+        /// <param name="addWorkItemStatus"></param>
         /// <returns></returns>
-        public int InsertDBWorkItem(WorkItem wi)
+        public int InsertDBWorkItem(WorkItem wi, bool addWorkItemStatus)
         {
             int workItemID = -1;
             using (var connection = new SQLiteConnection(dbConnectionString))
@@ -1496,14 +1329,18 @@ namespace MyWorkTracker.Code
                         "VALUES (@title, @desc, @creation)";
                     cmd.Parameters.AddWithValue("@title", wi.Title);
                     cmd.Parameters.AddWithValue("@desc", wi.TaskDescription);
-                    cmd.Parameters.AddWithValue("@creation", wi.CreateDateTime);
+                    cmd.Parameters.AddWithValue("@creation", wi.CreationDateTime);
                     cmd.ExecuteNonQuery();
 
                     // Get the identity value (to return)
                     cmd.CommandText = "SELECT last_insert_rowid()";
                     workItemID = (int)(Int64)cmd.ExecuteScalar();
                     wi.Meta.WorkItem_ID = workItemID;
-                    wi.WorkItemStatusEntry.WorkItemID = workItemID;
+
+                    if (wi.WorkItemStatusEntry == null)
+                        wi.WorkItemStatusEntry = new WorkItemStatusEntry();
+
+                    wi.WorkItemStatusEntry.WorkItemID = workItemID; // <-- here
 
                     // Save the Due Date
                     if (wi.DueDate > DateTime.MinValue)
@@ -1511,8 +1348,9 @@ namespace MyWorkTracker.Code
                         wi.Meta.DueDate_ID = InsertDBDueDate(wi, wi.DueDate, "Initial WorkItem created.");
                     }
 
-                    if (wi.WorkItemStatusEntry.WorkItemStatusEntryID == -1)
+                    if ((addWorkItemStatus) && (wi.WorkItemStatusEntry.WorkItemStatusEntryID == -1))
                     {
+                        Console.WriteLine("InsertDBWorkItem()...InsertDBWorkItemStatusEntry");
                         InsertDBWorkItemStatusEntry(wi.WorkItemStatusEntry);
                     }
                 }
@@ -1571,6 +1409,44 @@ namespace MyWorkTracker.Code
                     cmd.Parameters.AddWithValue("@NewDueDate", newDueDate);
                     cmd.Parameters.AddWithValue("@ChangeReason", changeReason);
                     cmd.Parameters.AddWithValue("@CreationDateTime", DateTime.Now);
+                    cmd.ExecuteNonQuery();
+
+                    // Get the identity value
+                    cmd.CommandText = "SELECT last_insert_rowid()";
+                    rowID = (int)(Int64)cmd.ExecuteScalar();
+
+                }
+                connection.Close();
+            }
+
+            _model.FireDueDateChanged(workItem, newDueDate);
+            return rowID;
+        }
+
+        /// <summary>
+        /// Inserts a DueDate record for the associated WorkItem, returning the rowID of the inserted record.
+        /// </summary>
+        /// <param name="workItem"></param>
+        /// <param name="newDueDate"></param>
+        /// <param name="creationDate"></param>
+        /// <param name="changeReason"></param>
+        /// <returns></returns>
+        public int InsertDBDueDate(WorkItem workItem, DateTime newDueDate, DateTime creationDate, string changeReason)
+        {
+            int rowID = -1;
+            if (changeReason.Equals(""))
+                changeReason = null;
+            using (var connection = new SQLiteConnection(dbConnectionString))
+            {
+                using (var cmd = new SQLiteCommand(connection))
+                {
+                    connection.Open();
+                    cmd.CommandText = "INSERT INTO DueDate (WorkItem_ID, DueDateTime, ChangeReason, CreationDateTime)" +
+                        "VALUES (@WorkItemID, @NewDueDate, @ChangeReason, @CreationDateTime)";
+                    cmd.Parameters.AddWithValue("@WorkItemID", workItem.Meta.WorkItem_ID);
+                    cmd.Parameters.AddWithValue("@NewDueDate", newDueDate);
+                    cmd.Parameters.AddWithValue("@ChangeReason", changeReason);
+                    cmd.Parameters.AddWithValue("@CreationDateTime", creationDate);
                     cmd.ExecuteNonQuery();
 
                     // Get the identity value

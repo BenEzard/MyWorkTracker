@@ -16,6 +16,10 @@ namespace MyWorkTracker
         Dictionary<PreferenceName, string> _backupPreferences = null;
 
         private bool _isSubmitted = false;
+        /// <summary>
+        /// Checks to see if the dialog box was submitted.
+        /// The alternative is cancelled.
+        /// </summary>
         public bool WasSubmitted
         {
             get
@@ -24,6 +28,9 @@ namespace MyWorkTracker
             }
         }
 
+        /// <summary>
+        /// Returns if the export is from the System file.
+        /// </summary>
         public bool ExportFromSystemFile
         {
             get
@@ -35,6 +42,9 @@ namespace MyWorkTracker
             }
         }
 
+        /// <summary>
+        /// Returns the Export file.
+        /// </summary>
         public string ExportFile
         {
             get
@@ -43,6 +53,9 @@ namespace MyWorkTracker
             }
         }
 
+        /// <summary>
+        /// Returns the stale number; how many days worth of Closed tasks should be exported.
+        /// </summary>
         public int StaleNumber
         {
             get
@@ -59,6 +72,9 @@ namespace MyWorkTracker
             
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public string WorkItemType
         {
             get
@@ -69,6 +85,9 @@ namespace MyWorkTracker
             }
         }
 
+        /// <summary>
+        /// Returns a boolean value if all due date information should be exported.
+        /// </summary>
         public bool AllDueDates
         {
             get
@@ -82,6 +101,9 @@ namespace MyWorkTracker
             }
         }
 
+        /// <summary>
+        /// Returns a boolean value if all status information should be exported.
+        /// </summary>
         public bool AllStatuses
         {
             get
@@ -95,6 +117,9 @@ namespace MyWorkTracker
             }
         }
 
+        /// <summary>
+        /// Returns a boolean value if deleted items should be included.
+        /// </summary>
         public bool IncludeDeleted
         {
             get
@@ -106,7 +131,10 @@ namespace MyWorkTracker
             }
         }
 
-        public bool IncludeSettings
+        /// <summary>
+        /// Returns a boolean value if Preferences should be included.
+        /// </summary>
+        public bool IncludePreferences
         {
             get
             {
@@ -117,11 +145,25 @@ namespace MyWorkTracker
             }
         }
 
+        /// <summary>
+        /// Get the SaveLocation from the dialog
+        /// </summary>
         public string SaveLocation
         {
             get
             {
                 return BackupSaveToTextBox.Text;
+            }
+        }
+
+        /// <summary>
+        /// Get the selected ExportVersion from the dialog
+        /// </summary>
+        public string ExportVersion
+        {
+            get
+            {
+                return (string)ExportVersionComboBox.SelectedValue;
             }
         }
 
@@ -132,6 +174,9 @@ namespace MyWorkTracker
             PopulateDialog();
         }
 
+        /// <summary>
+        /// Get the dialog ready by populating it.
+        /// </summary>
         private void PopulateDialog()
         {
             // --- Backup options -----------------------------------------------------------------------------------------------------
@@ -145,11 +190,36 @@ namespace MyWorkTracker
 
             SelectComboItem(DueDateComboBox, GetOriginalSettingValue(PreferenceName.DATA_EXPORT_DUEDATE_SELECTION));
             SelectComboItem(StatusComboBox, GetOriginalSettingValue(PreferenceName.DATA_EXPORT_STATUS_SELECTION));
+            
+            string[] exportVersionStr = GetOriginalSettingValue(PreferenceName.DATA_EXPORT_AVAILABLE_VERSIONS).Split(',');
+            for (int i = 0; i < exportVersionStr.Length; i++)
+            {
+                ExportVersionComboBox.Items.Add(exportVersionStr[i]);
+            }
+            SelectStringComboItem(ExportVersionComboBox, GetOriginalSettingValue(PreferenceName.DATA_EXPORT_DEFAULT_VERSION));
 
             if (GetOriginalSettingValue(PreferenceName.DATA_EXPORT_INCLUDE_DELETED) == "1")
                 BackupIncludeDeletedCheckBox.IsChecked = true;
 
             BackupSaveToTextBox.Text = GetOriginalSettingValue(PreferenceName.DATA_EXPORT_SAVE_TO_LOCATION);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="combo"></param>
+        /// <param name="valueToSelect"></param>
+        private void SelectStringComboItem(ComboBox combo, string valueToSelect)
+        {
+            for (int i = 0; i < combo.Items.Count; i++)
+            {
+                string value = Convert.ToString(combo.Items[i]);
+                if (value.Equals(valueToSelect))
+                {
+                    combo.SelectedIndex = i;
+                    break;
+                }
+            }
         }
 
         /// <summary>
@@ -181,6 +251,11 @@ namespace MyWorkTracker
             return sett;
         }
 
+        /// <summary>
+        /// The event fired when the WorkItem Combobox is changed.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void WorkItemSelectionComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             var cbItem = (ComboBoxItem)(WorkItemSelectionComboBox.SelectedValue);

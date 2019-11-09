@@ -2,9 +2,13 @@
 
 namespace MyWorkTracker.Code
 {
-    public class WorkItemStatusEntry
+    public class WorkItemStatusEntry : BaseDBElement
     {
-        public int WorkItemStatusEntryID { get; set; } = -1;
+        public int WorkItemStatusEntryID {
+            get { return DatabaseID; }
+            set { DatabaseID = value; }
+        }
+
         public int WorkItemID { get; set; } = -1;
         public int StatusID { get; set; } = -1;
 
@@ -13,11 +17,7 @@ namespace MyWorkTracker.Code
         /// </summary>
         public int CompletionAmount { get; set; } = 0;
 
-        public DateTime? CreationDateTime { get; set; }
-
-        public DateTime? ModificationDateTime { get; set; }
-
-        public DateTime DeletionDateTime { get; }
+        public WorkItemStatusEntry() { }
 
         public WorkItemStatusEntry(int statusID)
         {
@@ -74,6 +74,7 @@ namespace MyWorkTracker.Code
         {
             WorkItemID = workItemID;
             StatusID = statusID;
+            Console.WriteLine($"1: Setting Status to {statusID}, verified {StatusID}");
             CompletionAmount = 0;
             CreationDateTime = creationDateTime;
             if (deletionDate.HasValue)

@@ -2,15 +2,16 @@
 
 namespace MyWorkTracker.Code
 {
-    public class JournalEntry
+    public class JournalEntry : BaseDBElement
     {
-        public int JournalID { get; set; } = -1;
+        public int JournalID
+        {
+            get { return DatabaseID; }
+            set { DatabaseID = value; }
+        }
+
         public string Title { get; set; }
         public string Entry { get; set; }
-        public DateTime CreationDateTime { get; set; } = DateTime.Now;
-        public DateTime? ModificationDateTime { get; set; }
-
-        public DateTime? DeletionDateTime { get; set; }
 
         public JournalEntry() { }
 
@@ -20,7 +21,7 @@ namespace MyWorkTracker.Code
             Entry = entry;
         }
 
-        public JournalEntry(int journalID, string title, string entry, DateTime creationDateTime, DateTime? modificationDateTime)
+        public JournalEntry(int journalID, string title, string entry, DateTime? creationDateTime, DateTime? modificationDateTime)
         {
             JournalID = journalID;
             Title = title;

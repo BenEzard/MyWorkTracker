@@ -80,7 +80,7 @@ namespace MyWorkTracker
 
                 case AppAction.SELECT_WORK_ITEM:
                     // Because the UI is divided into two lists (active and closed), we need to toggle the selections of both lists.
-
+                    _model.IsBindingLoading = true;
                     WorkItem wi = args.CurrentWorkItemSelection;
 
                     // The Work Item selection is of an 'Active' status.
@@ -248,16 +248,25 @@ namespace MyWorkTracker
                             }
                         }
 
-                        _controller.ExportToXML(dbConn, exportDialog.SaveLocation, exportDialog.IncludeSettings, exportDialog.WorkItemType, exportDialog.StaleNumber, 
-                            exportDialog.IncludeDeleted, !exportDialog.AllStatuses, !exportDialog.AllDueDates);
+                        var exportSettings = new Dictionary<ExportSetting, string>();
+                        exportSettings.Add(ExportSetting.DATABASE_CONNECTION, dbConn);
+                        exportSettings.Add(ExportSetting.EXPORT_TO_LOCATION, exportDialog.SaveLocation);
+                        exportSettings.Add(ExportSetting.EXPORT_PREFERENCES, Convert.ToString(exportDialog.IncludePreferences));
+                        exportSettings.Add(ExportSetting.EXPORT_WORK_ITEM_OPTION, exportDialog.WorkItemType);
+                        exportSettings.Add(ExportSetting.EXPORT_DAYS_STALE, Convert.ToString(exportDialog.StaleNumber));
+                        exportSettings.Add(ExportSetting.EXPORT_INCLUDE_DELETED, Convert.ToString(exportDialog.IncludeDeleted));
+                        exportSettings.Add(ExportSetting.EXPORT_INCLUDE_LAST_STATUS_ONLY, Convert.ToString(!exportDialog.AllStatuses));
+                        exportSettings.Add(ExportSetting.EXPORT_INCLUDE_LAST_DUEDATE_ONLY, Convert.ToString(!exportDialog.AllDueDates));
+                        _controller.ExportToXML(exportDialog.ExportVersion, exportSettings);
 
                         MessageBox.Show($"Export has been saved to {exportDialog.SaveLocation}", "Export Complete");
                     }
                     break;
 
                 case AppAction.DATA_IMPORT:
+                    string importLastDirectory = _model.GetAppPreferenceValue(PreferenceName.DATA_IMPORT_LAST_DIRECTORY);
                     ImportWindow importDialog = new ImportWindow(_model.GetAppPreferenceValue(PreferenceName.APPLICATION_VERSION),
-                        _model.GetAppPreferenceValue(PreferenceName.DATA_EXPORT_COPY_LOCATION));
+                        importLastDirectory);
                     importDialog.ShowDialog();
 
                     if ((importDialog.WasSubmitted) && (importDialog.ImportSelectionCount > 0))
@@ -268,6 +277,11 @@ namespace MyWorkTracker
                             preferences = importDialog.LoadedPreferences;
                         }
                         _controller.ImportData(importDialog.GetImportVersion, preferences, importDialog.GetImportStatuses, importDialog.LoadedXMLDocument);
+                        string directoryPortionOnly = importLastDirectory.Substring(0, importLastDirectory.LastIndexOf('\\') - 1);
+                        if (importDialog.GetImportFileLocation.Equals(directoryPortionOnly) == false)
+                        {
+                            _controller.UpdateAppPreference(PreferenceName.DATA_IMPORT_LAST_DIRECTORY, directoryPortionOnly);
+                        }
                     }
                     break;
 
@@ -333,7 +347,7 @@ namespace MyWorkTracker
             // If the application is in 'add mode' then we want to insert a record.
             if (_model.GetApplicationMode() == DataEntryMode.ADD)
             {
-                _controller.InsertDBWorkItem(selectedWorkItem);
+                _controller.InsertDBWorkItem(selectedWorkItem, true);
                 _model.AddWorkItem(selectedWorkItem, true, true);
                 _model.SetApplicationMode(DataEntryMode.EDIT);
             }
@@ -356,6 +370,7 @@ namespace MyWorkTracker
                 {
                     var wis = (WorkItemStatus)WorkItemStatusComboBox.SelectedItem;
                     int completion = (int)WorkItemProgressSlider.Value;
+                    Console.WriteLine("---> updateworkitemasrequired");
                     _controller.InsertOrUpdateDBWorkItemStatusEntry(selectedWorkItem, completion, wis.WorkItemStatusID);
                 }
             }

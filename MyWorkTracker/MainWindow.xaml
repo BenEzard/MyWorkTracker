@@ -80,7 +80,6 @@
                 <RowDefinition Height="*" />
                 <RowDefinition Height="2*" />
             </Grid.RowDefinitions>
-
             <TabControl Name="OverviewAreaTabs">
                 <TabItem Header="Active">
                     <ListBox Name="Overview"
@@ -129,7 +128,7 @@
                     <ListView Name="ClosedListView" SelectionChanged="ActiveWorkItemSelectionChanged" SelectionMode="Single">
                         <ListView.View>
                             <GridView>
-                                <GridViewColumn Header="Created" DisplayMemberBinding="{Binding CreateDateTime, StringFormat=\{0:dd/MM HH:mm\}}" Width="80">
+                                <GridViewColumn Header="Created" DisplayMemberBinding="{Binding CreationDateTime, StringFormat=\{0:dd/MM HH:mm\}}" Width="80">
                                 </GridViewColumn>
                                 <GridViewColumn Header="Title"  DisplayMemberBinding="{Binding Title}" Width="300" >
                                     <GridViewColumn.HeaderContainerStyle>

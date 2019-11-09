@@ -186,9 +186,13 @@
                                 <ComboBoxItem>full</ComboBoxItem>
                                 <ComboBoxItem>latest</ComboBoxItem>
                             </ComboBox>
-                            <TextBlock Text=" Status information." VerticalAlignment="Center"/>
+                            <TextBlock Text=" Status information" VerticalAlignment="Center"/>
                         </StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="0,5,09,0">
+                        <StackPanel Orientation="Horizontal" Margin="0,3,0,3">
+                            <TextBlock Text="using export version:" VerticalAlignment="Center"/>
+                            <ComboBox Name="ExportVersionComboBox" Width="60" Margin="5,0,0,0"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,3,0,0">
                             <TextBlock Text="Save to: " VerticalAlignment="Center"/>
                             <TextBox Name="BackupSaveToTextBox" Width="295" />
                         </StackPanel>

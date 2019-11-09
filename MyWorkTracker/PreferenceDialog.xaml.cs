@@ -63,6 +63,7 @@ namespace MyWorkTracker
             foreach (PreferenceName n in _originalPreferences.Keys)
             {
                 Preference s = _originalPreferences[n];
+                Console.WriteLine($"Preference {s.Name} = {_originalPreferences[n].Value}");
             }
 
             PopulateDialog();
@@ -120,6 +121,13 @@ namespace MyWorkTracker
 
             if (GetOriginalSettingValue(PreferenceName.DATA_EXPORT_INCLUDE_PREFERENCES) == "1")
                 BackupIncludePreferencesCheckBox.IsChecked = true;
+
+            string[] exportVersionStr = GetOriginalSettingValue(PreferenceName.DATA_EXPORT_AVAILABLE_VERSIONS).Split(',');
+            for (int i = 0; i < exportVersionStr.Length; i++)
+            {
+                ExportVersionComboBox.Items.Add(exportVersionStr[i]);
+            }
+            SelectStringComboItem(ExportVersionComboBox, GetOriginalSettingValue(PreferenceName.DATA_EXPORT_DEFAULT_VERSION));
 
             BackupSaveToTextBox.Text = GetOriginalSettingValue(PreferenceName.DATA_EXPORT_SAVE_TO_LOCATION);
             BackupCopyToTextBox.Text = GetOriginalSettingValue(PreferenceName.DATA_EXPORT_COPY_LOCATION);
@@ -251,6 +259,11 @@ namespace MyWorkTracker
             if (GetOriginalSettingValue(PreferenceName.DATA_EXPORT_STATUS_SELECTION).Equals(value, StringComparison.OrdinalIgnoreCase) == false)
                 _settingChanges.Add(PreferenceName.DATA_EXPORT_STATUS_SELECTION, value);
 
+            // -- Status ExportVersion ComboBox
+            value = ExportVersionComboBox.SelectedValue.ToString();
+            if (GetOriginalSettingValue(PreferenceName.DATA_EXPORT_DEFAULT_VERSION).Equals(value, StringComparison.OrdinalIgnoreCase) == false)
+                _settingChanges.Add(PreferenceName.DATA_EXPORT_DEFAULT_VERSION, value);
+
             // -- Backup SaveTo Textbox
             value = BackupSaveToTextBox.Text;
             if (GetOriginalSettingValue(PreferenceName.DATA_EXPORT_SAVE_TO_LOCATION).Equals(value, StringComparison.OrdinalIgnoreCase) == false)
@@ -285,6 +298,19 @@ namespace MyWorkTracker
             for (int i = 0; i < combo.Items.Count; i++)
             {
                 string value = Convert.ToString(((ComboBoxItem)combo.Items[i]).Content.ToString());
+                if (value.Equals(valueToSelect))
+                {
+                    combo.SelectedIndex = i;
+                    break;
+                }
+            }
+        }
+
+        private void SelectStringComboItem(ComboBox combo, string valueToSelect)
+        {
+            for (int i = 0; i < combo.Items.Count; i++)
+            {
+                string value = Convert.ToString(combo.Items[i]);
                 if (value.Equals(valueToSelect))
                 {
                     combo.SelectedIndex = i;

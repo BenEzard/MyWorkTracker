@@ -1,13 +1,45 @@
 ﻿INSERT INTO WorkItem (TaskTitle, TaskDescription) VALUES
-	('A Sample Work Item', 'Noteworthy Cards (https://www.noteworthy.cards/) is an Australian social enterprise selling greeting and encouragement cards while donating 100% of profits to fund life-changing gifts for people suffering in poverty.
+	('Work Item #1 - Active', 'This WorkItem is Active.
 
-About seven billion greeting cards are purchased worldwide every year, with annual retail sales estimated at almost $10 billion AUD. Imagine how many lives could be changed around the world if 100% of those profits were used to help people in need!
+And it has 6 status updates: at 0%, 10%, 20%, 30%, 40% and 50%. About seven billion greeting cards are purchased worldwide every year, with annual retail sales estimated at almost $10 billion AUD. Imagine how many lives could be changed around the world if 100% of those profits were used to help people in need!
 
 By purchasing our cards you will help fund gifts that support community, education, good food, good health, safe water and sanitation in multiple countries around the world.');
 
-INSERT INTO WorkItem (TaskTitle, TaskDescription) VALUES
-	('A Closed Work Item', 'Some example text');
+INSERT INTO WorkItemStatus (WorkItem_ID, Status_ID, CompletionAmount, CreationDateTime) VALUES (1, 1, 0, '2019-10-01 07:00:00.000');
+INSERT INTO WorkItemStatus (WorkItem_ID, Status_ID, CompletionAmount, CreationDateTime) VALUES (1, 1, 10, '2019-10-02 08:00:00.000');
+INSERT INTO WorkItemStatus (WorkItem_ID, Status_ID, CompletionAmount, CreationDateTime) VALUES (1, 1, 20, '2019-10-03 09:00:00.000');
+INSERT INTO WorkItemStatus (WorkItem_ID, Status_ID, CompletionAmount, CreationDateTime) VALUES (1, 1, 30, '2019-10-04 10:30:10.000');
+INSERT INTO WorkItemStatus (WorkItem_ID, Status_ID, CompletionAmount, CreationDateTime) VALUES (1, 1, 40, '2019-10-05 13:01:00.000');
+INSERT INTO WorkItemStatus (WorkItem_ID, Status_ID, CompletionAmount, CreationDateTime) VALUES (1, 1, 50, '2019-10-06 12:10:00.000');
 
+INSERT INTO DueDate (WorkItem_ID, DueDateTime, CreationDateTime) VALUES (1, '2019-10-10 13:30:00.000', '2019-10-01 07:00:00.000');
+
+
+INSERT INTO WorkItem (TaskTitle, TaskDescription) VALUES ('Work Item #2', 'This one is set to Awaiting Feedback, and the due date has changed.');
+
+INSERT INTO WorkItemStatus (WorkItem_ID, Status_ID, CompletionAmount, CreationDateTime) VALUES (2, 1, 25, '2019-10-01 07:00:00.000');
+INSERT INTO WorkItemStatus (WorkItem_ID, Status_ID, CompletionAmount, CreationDateTime) VALUES (2, 2, 70, '2019-10-02 17:00:00.000');
+INSERT INTO WorkItemStatus (WorkItem_ID, Status_ID, CompletionAmount, CreationDateTime) VALUES (2, 2, 60, '2019-10-02 17:10:00.000');
+
+INSERT INTO DueDate (WorkItem_ID, DueDateTime, CreationDateTime) VALUES (2, '2019-10-03 13:30:00.000', '2019-10-01 07:00:00.000');
+
+INSERT INTO DueDate (WorkItem_ID, DueDateTime, CreationDateTime) VALUES (2, '2019-10-05 18:00:00.000', '2019-10-02 07:00:00.000');
+
+
+
+INSERT INTO WorkItem (TaskTitle, TaskDescription) VALUES ('Work Item #3', 'This WorkItem is Completed.');
+
+INSERT INTO WorkItemStatus (WorkItem_ID, Status_ID, CompletionAmount, CreationDateTime) VALUES (3, 1, 10, '2019-10-03 07:00:00.000');
+INSERT INTO WorkItemStatus (WorkItem_ID, Status_ID, CompletionAmount, CreationDateTime) VALUES (3, 3, 100, '2019-10-05 17:00:00.000');
+
+INSERT INTO DueDate (WorkItem_ID, DueDateTime, CreationDateTime) VALUES (3, '2019-10-05 13:30:00.000', '2019-10-03 07:00:00.000');
+
+INSERT INTO WorkItem (TaskTitle, TaskDescription) VALUES ('Work Item #4', 'This WorkItem is Cancelled.');
+
+INSERT INTO WorkItemStatus (WorkItem_ID, Status_ID, CompletionAmount, CreationDateTime) VALUES (4, 1, 10, '2019-10-01 07:00:00.000');
+INSERT INTO WorkItemStatus (WorkItem_ID, Status_ID, CompletionAmount, CreationDateTime) VALUES (4, 4, 20, '2019-10-03 17:00:00.000');
+
+INSERT INTO DueDate (WorkItem_ID, DueDateTime, CreationDateTime) VALUES (4, '2019-10-03 13:30:00.000', '2019-10-01 07:00:00.000');
 
 INSERT INTO Journal (WorkItem_ID, Header, [Entry]) VALUES
 	(1, 'First entry', 'With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata.'),
@@ -20,10 +52,17 @@ INSERT INTO Journal (WorkItem_ID, Header, [Entry]) VALUES
 
 	With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata.');
 
-INSERT INTO WorkItemStatus (WorkItem_ID, Status_ID, CompletionAmount) VALUES
-	(1, 1, 0);
-INSERT INTO WorkItemStatus (WorkItem_ID, Status_ID, CompletionAmount) VALUES
-	(1, 3, 10);
+INSERT INTO Journal (WorkItem_ID, Header, [Entry]) VALUES
+	(2, 'First entry', 'With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata.'),
+    (2, 'Second entry', 'With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-'),
+    (2, 'Third entry', 'With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. 
+	
+	With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata.');
 
-INSERT INTO WorkItemStatus (WorkItem_ID, Status_ID, CompletionAmount) VALUES
-	(2, 3, 30);
+
+INSERT INTO Journal (WorkItem_ID, Header, [Entry]) VALUES
+	(3, 'First entry', 'With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata.'),
+    (3, 'Second entry', 'With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-'),
+    (3, 'Third entry', 'With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. 
+	
+	With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata.');

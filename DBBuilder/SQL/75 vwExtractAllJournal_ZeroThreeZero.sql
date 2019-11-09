@@ -1,4 +1,4 @@
-﻿CREATE VIEW vwExtractAllJournal AS
+﻿CREATE VIEW vwExtractAllJournal_ZeroThreeZero AS
 SELECT      CASE WHEN J.Journal_ID IS NULL THEN -1 ELSE J.Journal_ID END AS Journal_ID,
             WorkItem.WorkItem_ID,
             J.Header,

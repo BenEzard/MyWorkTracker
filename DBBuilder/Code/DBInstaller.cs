@@ -50,7 +50,7 @@ namespace MyWorkTracker.Data
                                 string sql = "INSERT INTO " + token;
                                 cmd.CommandText = sql;
                                 Console.WriteLine(sql);
-                                Thread.Sleep(1000);
+                                Thread.Sleep(500);
                                 cmd.ExecuteNonQuery();
                             }
                         }

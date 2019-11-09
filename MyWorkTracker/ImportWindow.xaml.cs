@@ -60,6 +60,9 @@ namespace MyWorkTracker
             }
         }
 
+        /// <summary>
+        /// Count the number of Work Items selected for import.
+        /// </summary>
         public int ImportSelectionCount
         {
             get { return LoadList.SelectedItems.Count; }
@@ -85,6 +88,7 @@ namespace MyWorkTracker
             _defaultSaveLocation = defaultSaveLocation;
             InitializeComponent();
             IntoVersionTextBox.Text = applicationVersion;
+
             LoadList.ItemsSource = _importList;
         }
 
@@ -176,6 +180,21 @@ namespace MyWorkTracker
         }
 
         /// <summary>
+        /// Return the file location where the import occured from.
+        /// Returns NULL if file was not imported.
+        /// </summary>
+        public string GetImportFileLocation
+        {
+            get
+            {
+                if (WasSubmitted == true)
+                    return ImportFileTextBox.Text;
+                else
+                    return null;
+            }
+        }
+
+        /// <summary>
         /// 
         /// </summary>
         /// <param name="filename"></param>
@@ -186,19 +205,21 @@ namespace MyWorkTracker
             _statuses.Clear();
 
             // Use XMLReader if you don't want to load it into memory
-            _xmlDoc = XDocument.Load(@"D:\test.xml");
+            _xmlDoc = XDocument.Load(filename);
             var query = from element in _xmlDoc.Elements("MyWorkTracker")
                         select element;
 
             string version = "";
+            string extractVersion = "";
             string extractDate = "";
             foreach (var el2 in query)
             {
                 version = el2.Attribute("ApplicationVersion").Value;
+                extractVersion = el2.Attribute("ExtractVersion").Value;
                 extractDate = el2.Attribute("ExtractDate").Value;
             }
             FileDataTextBox.Text = extractDate;
-            LoadVersionTextBox.Text = version;
+            LoadVersionTextBox.Text = extractVersion;
 
             var preferenceQuery = from element in _xmlDoc.Descendants("Preference")
                          select element;
@@ -219,7 +240,7 @@ namespace MyWorkTracker
                 string statusLabel = el2.Element("StatusLabel").Value;
                 bool isConsideredActive = Boolean.Parse(el2.Element("IsConsideredActive").Value);
                 bool isDefault = Boolean.Parse(el2.Element("IsDefault").Value);
-                string deletionDateStr = el2.Element("DeletionDate").Value;
+                string deletionDateStr = el2.Element("DeletionDateTime").Value;
 
                 if (deletionDateStr.Equals("") == false)
                 {
@@ -237,7 +258,7 @@ namespace MyWorkTracker
                 var workItemID = Int32.Parse(el3.Attribute("WorkItem_ID").Value);
                 var statusID = Int32.Parse(el3.Attribute("LastWorkItemStatus_ID").Value);
                 var title = el3.Element("Title").Value;
-                var creationDate = DateTime.Parse(el3.Element("CreationDate").Value);
+                var creationDate = DateTime.Parse(el3.Element("CreationDateTime").Value);
 
                 _importList.Add(new WorkItemImportListEntry(workItemID, title, creationDate, GetStatusLabel(statusID)));
             }

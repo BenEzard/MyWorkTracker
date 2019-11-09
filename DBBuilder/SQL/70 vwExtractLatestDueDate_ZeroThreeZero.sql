@@ -1,4 +1,4 @@
-﻿CREATE VIEW vwExtractLatestDueDate AS 
+﻿CREATE VIEW vwExtractLatestDueDate_ZeroThreeZero AS 
 SELECT DISTINCT DueDate.*
 From DueDate
 INNER JOIN ( 

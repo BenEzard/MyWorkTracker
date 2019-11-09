@@ -5,10 +5,8 @@ using System.Runtime.CompilerServices;
 
 namespace MyWorkTracker.Code
 {
-    public class WorkItem : INotifyPropertyChanged
+    public class WorkItem : BaseDBElement
     {
-        public event PropertyChangedEventHandler PropertyChanged;
-
         public WorkItemDBMeta Meta { get; set; } = new WorkItemDBMeta();
 
         private string _title = "";
@@ -23,12 +21,8 @@ namespace MyWorkTracker.Code
         /// </summary>
         public WorkItemStatus workItemStatus { get; set; }
 
-
         public WorkItemStatusEntry WorkItemStatusEntry { get; set; }
         
-        public DateTime CreateDateTime { get; set; } = DateTime.Now;
-        public DateTime DeleteDateTime { get; set; }
-
         private DateTime _dueDateTime = DateTime.MinValue;
 
         /// <summary>
@@ -70,7 +64,7 @@ namespace MyWorkTracker.Code
             TaskDescription = description;
             Status = status;
             Completed = amountComplete;
-            CreateDateTime = createDateTime;
+            CreationDateTime = createDateTime;
             DueDate = dueDateTime;
         }
 
@@ -146,14 +140,12 @@ namespace MyWorkTracker.Code
             get { return WorkItemStatusEntry.CompletionAmount; }
             set
             {
+                if (WorkItemStatusEntry == null)
+                    WorkItemStatusEntry = new WorkItemStatusEntry();
                 WorkItemStatusEntry.CompletionAmount = value;
                 OnPropertyChanged();
             }
         }
 
-        private void OnPropertyChanged([CallerMemberName] string caller = "")
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(caller));
-        }
     }
 }

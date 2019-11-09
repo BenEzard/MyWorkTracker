@@ -1,8 +1,8 @@
-﻿CREATE VIEW vwExtractWorkItem AS 
+﻿CREATE VIEW vwExtractWorkItem_ZeroThreeZero AS 
 SELECT WorkItem.WorkItem_ID, 
 	WorkItem.TaskTitle, 
 	WorkItem.TaskDescription, 
-	WorkItem.Complete, 
+	vwMostRecentWorkItemStatus.CompletionAmount AS Complete, 
 	WorkItem.CreationDateTime, 
 	WorkItem.DeletionDateTime, 
 	vwMostRecentWorkItemStatus.IsConsideredActive,

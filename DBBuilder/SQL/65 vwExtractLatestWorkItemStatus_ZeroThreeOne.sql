@@ -1,4 +1,4 @@
-﻿CREATE VIEW vwExtractLatestWorkItemStatus AS
+﻿CREATE VIEW vwExtractLatestWorkItemStatus_ZeroThreeOne AS
 SELECT
 	WorkItemStatus.WorkItemStatus_ID,
     WorkItemStatus.WorkItem_ID,

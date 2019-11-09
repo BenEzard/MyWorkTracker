@@ -74,7 +74,14 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Code\BaseDBElement.cs" />
     <Compile Include="Code\BooleanToVisibilityConverter.cs" />
+    <Compile Include="Code\Exporter\DataExportZeroThreeOne.cs" />
+    <Compile Include="Code\Exporter\DataExportZeroThreeZero.cs" />
+    <Compile Include="Code\Importer\DataImportZeroThreeOne.cs" />
+    <Compile Include="Code\Importer\DataImportZeroThreeZero.cs" />
+    <Compile Include="Code\Exporter\IDataExport.cs" />
+    <Compile Include="Code\Importer\IDataImport.cs" />
     <Compile Include="Code\Preference.cs" />
     <Compile Include="Code\WorkItemStatus.cs" />
     <Compile Include="Code\WorkItemStatusEntry.cs" />

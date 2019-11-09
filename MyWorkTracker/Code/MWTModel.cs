@@ -42,6 +42,9 @@ namespace MyWorkTracker.Code
             set { _selectedWorkItem = value; OnPropertyChanged(""); }
         }
 
+        /// <summary>
+        /// Clear all WorkItems from both the active and closed collections (in memory).
+        /// </summary>
         public void ClearAllWorkItems()
         {
             _activeWorkItems.Clear();
@@ -121,8 +124,6 @@ namespace MyWorkTracker.Code
         /// Where IsBindingLoading=true the changes are a result of data-binding.
         /// </summary>
         public bool IsBindingLoading { get; set; }
-
-
 
         public MWTModel()
         {

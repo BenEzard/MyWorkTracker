@@ -84,10 +84,12 @@
     <Content Include="SQL\55 vwWorkItem.sql">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="SQL\60 vwExtractWorkItem.sql" />
-    <Content Include="SQL\65 vwExtractLatestWorkItemStatus.sql" />
-    <Content Include="SQL\70 vwExtractLatestDueDate.sql" />
-    <Content Include="SQL\75 vwExtractAllJournal.sql" />
+    <Content Include="SQL\60 vwExtractWorkItem_ZeroThreeZero.sql" />
+    <Content Include="SQL\60 vwExtractWorkItem_ZeroThreeOne.sql" />
+    <Content Include="SQL\65 vwExtractLatestWorkItemStatus_ZeroThreeOne.sql" />
+    <Content Include="SQL\65 vwExtractLatestWorkItemStatus_ZeroThreeZero.sql" />
+    <Content Include="SQL\70 vwExtractLatestDueDate_ZeroThreeZero.sql" />
+    <Content Include="SQL\75 vwExtractAllJournal_ZeroThreeZero.sql" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MyWorkTracker\MyWorkTracker.csproj">

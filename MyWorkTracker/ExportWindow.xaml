@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MyWorkTracker"
         mc:Ignorable="d"
-        Height="350" Width="400" WindowStartupLocation="Manual">
+        Height="400" Width="400" WindowStartupLocation="Manual">
         <StackPanel Orientation="Vertical" Margin="5">
         <Border BorderThickness="0,0,0,1" BorderBrush="DarkGray" DockPanel.Dock="Top">
             <StackPanel Orientation="Horizontal" Background="AliceBlue" Margin="0,0,0,0">
@@ -55,6 +55,10 @@
             </StackPanel>
         <CheckBox Name="BackupIncludeDeletedCheckBox" Content="Include deleted items in backup" Margin="0,5,0,0" />
         <CheckBox Name="BackupIncludeSettingsCheckBox" Content="Include Preferences in backup" Margin="0,5,0,0" />
+        <StackPanel Orientation="Horizontal" Margin="0,5,0,15">
+            <TextBlock Text="using export version:" VerticalAlignment="Center"/>
+            <ComboBox Name="ExportVersionComboBox" Width="60" Margin="5,0,0,0"/>
+        </StackPanel>
         <StackPanel Orientation="Horizontal" Margin="0,5,0,15">
                 <TextBlock Text="Save to: " VerticalAlignment="Center"/>
                 <TextBox Name="BackupSaveToTextBox" Width="295" Background="LightYellow" />
