@@ -42,6 +42,8 @@ namespace MyWorkTracker.Code
             set { _selectedWorkItem = value; OnPropertyChanged(""); }
         }
 
+        public ObservableCollection<NotebookTopic> NotebookTopics = new ObservableCollection<NotebookTopic>();
+
         /// <summary>
         /// Clear all WorkItems from both the active and closed collections (in memory).
         /// </summary>

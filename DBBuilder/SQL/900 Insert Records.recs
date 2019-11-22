@@ -66,3 +66,20 @@ INSERT INTO Journal (WorkItem_ID, Header, [Entry]) VALUES
     (3, 'Third entry', 'With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata. 
 	
 	With more details than a cat in the hat lead by a rat with a zat-nik-ata. With more details than a cat in the hat lead by a rat with a zat-nik-ata.');
+
+INSERT INTO NotebookTopic (NotebookTopic_ID, ParentTopic_ID, Topic) VALUES (1, NULL, 'Technical Guide');
+INSERT INTO NotebookTopic (NotebookTopic_ID, ParentTopic_ID, Topic) VALUES (2, NULL, 'Team Info');
+INSERT INTO NotebookTopic (NotebookTopic_ID, ParentTopic_ID, Topic) VALUES (3, 1, 'Deployment');
+INSERT INTO NotebookTopic (NotebookTopic_ID, ParentTopic_ID, Topic) VALUES (4, 3, 'to ODS');
+INSERT INTO NotebookTopic (NotebookTopic_ID, ParentTopic_ID, Topic) VALUES (5, 3, 'to DW');
+INSERT INTO NotebookTopic (NotebookTopic_ID, ParentTopic_ID, Topic) VALUES (6, 3, 'Jitterbit');
+INSERT INTO NotebookTopic (NotebookTopic_ID, ParentTopic_ID, Topic) VALUES (7, 6, 'Development');
+INSERT INTO NotebookTopic (NotebookTopic_ID, ParentTopic_ID, Topic) VALUES (8, 6, 'Test');
+INSERT INTO NotebookTopic (NotebookTopic_ID, ParentTopic_ID, Topic) VALUES (9, 7, 'Production');
+INSERT INTO NotebookTopic (NotebookTopic_ID, ParentTopic_ID, Topic) VALUES (10, NULL, 'Environment');
+INSERT INTO NotebookTopic (NotebookTopic_ID, ParentTopic_ID, Topic) VALUES (11, 10, 'Servers');
+INSERT INTO NotebookTopic (NotebookTopic_ID, ParentTopic_ID, Topic) VALUES (12, NULL, 'Midrange Applications');
+INSERT INTO NotebookTopic (NotebookTopic_ID, ParentTopic_ID, Topic) VALUES (13, 12, 'AHATS');
+INSERT INTO NotebookTopic (NotebookTopic_ID, ParentTopic_ID, Topic) VALUES (14, 12, 'MICA');
+INSERT INTO NotebookTopic (NotebookTopic_ID, ParentTopic_ID, Topic) VALUES (15, 12, 'H2H');
+INSERT INTO NotebookTopic (NotebookTopic_ID, ParentTopic_ID, Topic) VALUES (16, 15, 'SHS Reporting');

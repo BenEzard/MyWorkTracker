@@ -7,3 +7,4 @@ journal_open.png		book_open.png				Renamed
 journal_add.png										Merge of book_open.png and bullet_add.png
 journal_delete.ping									book_open.png merged with 'cross' from 'font_red_delete.png'
 journal_edit.png									book_open.png merged with 'cross' from 'bullet_edit.png'
+document_notes.png

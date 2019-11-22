@@ -27,6 +27,204 @@ namespace MyWorkTracker.Code
             LoadWorkItemStatusesFromDB();
 
             LoadWorkItems(Int32.Parse(_model.GetAppPreferenceValue(PreferenceName.LOAD_STALE_DAYS)));
+
+            // --- TODO start test data
+            //LoadNotebookTopics();
+            AddNotebookTopic(new NotebookTopic(1,-1,"New Notebook",""));
+            AddNotebookTopic(new NotebookTopic(2,-1,"New Notebook",""));
+            // --- end test data
+        }
+
+        /// <summary>
+        /// Add a CheckListItem to a Work Item.
+        /// Note that it cannot have the same text as another item
+        /// </summary>
+        /// <param name="wi"></param>
+        /// <param name="item"></param>
+        public void AddCheckListItem(WorkItem wi, CheckListItem item)
+        {
+            if (wi == null) throw new ArgumentNullException("wi");
+            if (item == null) throw new ArgumentNullException("item");
+
+            // Check to see if the text is identical to an existing CheckListItem on the WorkItem.
+            bool canAdd = true;
+            foreach (CheckListItem i in wi.CheckListItems)
+            {
+                if (i.Task.Equals(item.Task)) {
+                    canAdd = false;
+                    break;
+                }
+            }
+
+            if (canAdd)
+                wi.CheckListItems.Add(item);
+        }
+
+        public void AddNotebookTopic(NotebookTopic topic)
+        {
+            _model.NotebookTopics.Add(topic);
+        }
+
+        /// <summary>
+        /// Load the Notebook Topic (for the ViewTree)
+        /// </summary>
+        public void LoadNotebookTopics()
+        {
+        /*    using (var connection = new SQLiteConnection(dbConnectionString))
+            {
+                using (var cmd = new SQLiteCommand(connection))
+                {
+                    connection.Open();
+                    cmd.CommandText = "SELECT * FROM vwNotebookTopic";
+
+                    using (SQLiteDataReader reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            // Get the database results
+                            int id = Convert.ToInt32(reader["NotebookTopic_ID"]);
+                            string stringID = Convert.ToString(id).PadLeft(3, '0');
+                            int parentID = -1;
+                            if (!(reader["ParentTopic_ID"] is DBNull))
+                            {
+                                parentID = Convert.ToInt32(reader["ParentTopic_ID"]);
+                            }
+                            string topic = (string)reader["Topic"];
+                            string treePath = (string)reader["TreePath"];
+
+                            NotebookTopic topicObj = null;
+                            if (parentID == -1) // If there is no parentID, then add it to the collection
+                            {
+                                _model.NotebookTopics.Add(stringID, new NotebookTopic(id, parentID, topic, treePath));
+                                Console.WriteLine($"A: Adding {stringID} {topic}");
+                            } else // If there is a parent ID...
+                            {
+                                string[] listofTreePathPortions = StringMethods.SplitStringByLength(treePath, 3); // Get the list of strings in the TreePath.
+
+                                // Navigate down the TreePath
+                                foreach (string keyPortion in listofTreePathPortions)
+                                {
+                                    if (topicObj == null)
+                                    {
+                                        Console.WriteLine($"1: Navigating down {keyPortion}");
+                                        topicObj = _model.NotebookTopics[keyPortion];
+                                    }
+                                    else
+                                    {
+                                        Console.WriteLine($"2: Navigating down {keyPortion}");
+                                        if (topicObj.HasKey(keyPortion))
+                                            topicObj = topicObj.Topics[keyPortion];
+/*                                        else
+                                        {
+                                            topicObj.Add(stringID, new NotebookTopic(id, parentID, topic, treePath));
+                                            Console.WriteLine($"B: Adding {stringID} {topic}");
+                                        }*/
+                               /*     }
+                                }
+                                if (topicObj != null)
+                                {
+                                    string key = Convert.ToString(topicObj.DatabaseID).PadLeft(3, '0');
+                                    Console.WriteLine($"C: Adding {key} {topic}");
+                                    _model.NotebookTopics.Add(key, topicObj);
+                                }
+
+                            }
+
+                        }
+                    }
+                    connection.Close();
+                }
+            }*/
+        }
+
+        /// <summary>
+        /// Working here
+        /// </summary>
+        /// <param name="topicString"></param>
+        public void AddNotebookTopics(string topicString)
+        {
+            if (topicString.Length > 0)
+            {
+                string[] topicsToAdd = topicString.Split('>');
+                string[] valuesToAdd = new string[topicsToAdd.Length];
+                for (int i = 0; i < topicsToAdd.Length; i++)
+                {
+                    valuesToAdd[i] = topicsToAdd[i].Trim();
+                }
+            }
+
+            // SelectedNode
+        }
+
+        internal void LoadWorkItemCheckLists(WorkItem wi, bool loadDeleted=false)
+        {
+            using (var connection = new SQLiteConnection(dbConnectionString))
+            {
+                using (var cmd = new SQLiteCommand(connection))
+                {
+                    connection.Open();
+                    string sql = "SELECT * FROM vwOpenAndCompleteWorkItemCheckList" +
+                        " WHERE WorkItem_ID = @workItemID";
+                    if (loadDeleted == false)
+                        sql += " AND DeletionDateTime IS NULL";
+                    sql += " ORDER BY ItemSortOrder";
+                    cmd.CommandText = sql;
+                    cmd.Parameters.AddWithValue("@workItemID", wi.Meta.WorkItem_ID);
+
+                    using (SQLiteDataReader reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            CheckListItem cli = null;
+
+                            int workItemCheckListID = Convert.ToInt32(reader["WorkItemCheckList_ID"]);
+                            string taskText = (string)reader["TaskText"];
+                            int indent = Convert.ToInt32(reader["Indent"]);
+
+                            string details = null;
+                            if (reader["TaskDetails"] != DBNull.Value) {
+                                details = (string)reader["TaskDetails"];
+                            }
+
+                            DateTime? dueDateTime = null;
+                            if (reader["DueDateTime"] != DBNull.Value)
+                                dueDateTime = Convert.ToDateTime(reader["DueDateTime"].ToString());
+
+                            DateTime? completionDateTime = null;
+                            if (reader["CompletionDateTime"] != DBNull.Value)
+                            {
+                                completionDateTime = Convert.ToDateTime(reader["CompletionDateTime"].ToString());
+                            }
+
+                            int sortOrder = Convert.ToInt32(reader["ItemSortOrder"]);
+                            DateTime creationDateTime = Convert.ToDateTime(reader["CreationDateTime"].ToString());
+
+                            DateTime? modifDateTime = null;
+                            if (reader["ModificationDateTime"] != DBNull.Value)
+                            {
+                                modifDateTime = Convert.ToDateTime(reader["ModificationDateTime"].ToString());
+                            }
+
+                            if (loadDeleted == false)
+                            {
+                                DateTime? deleteDateTime = null;
+                                if (reader["DeletionDateTime"] != DBNull.Value)
+                                {
+                                    deleteDateTime = Convert.ToDateTime(reader["DeletionDateTime"].ToString());
+                                }
+                                cli = new CheckListItem(workItemCheckListID, taskText, details, indent, dueDateTime, completionDateTime, sortOrder, creationDateTime, modifDateTime, deleteDateTime);
+                            }
+                            else
+                                cli = new CheckListItem(workItemCheckListID, taskText, details, indent, dueDateTime, completionDateTime, sortOrder, creationDateTime, modifDateTime, null);
+
+                            wi.CheckListItems.Add(cli);
+                        }
+                    }
+                    connection.Close();
+                }
+            }
+            wi.AreCheckListsLoaded = true;
+
         }
 
         /// <summary>
@@ -766,7 +964,7 @@ namespace MyWorkTracker.Code
         /// Use 10 would give you active + any Work Items completed in the last 10 calendar days.</param>
         private void LoadWorkItems(int loadAgedDays)
         {
-            // When this is called, first clear any content.
+            // When this is called, first clear any content of the WorkItem collections.
             _model.ClearAllWorkItems();
 
             Console.WriteLine($"loadAgedDays={loadAgedDays}");

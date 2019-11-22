@@ -123,6 +123,13 @@ namespace MyWorkTracker
                     }
                     JournalEntryList.ItemsSource = _model.SelectedWorkItem.Journals;
 
+                    //  Check to see if the CheckList for this WorkItem have been loaded. Load them if not.
+                    if (_model.SelectedWorkItem.AreCheckListsLoaded == false)
+                    {
+                        _controller.LoadWorkItemCheckLists(_model.SelectedWorkItem);
+                    }
+                    WorkItemCheckList.ItemsSource = _model.SelectedWorkItem.CheckListItems;
+
                     _model.SetApplicationMode(DataEntryMode.EDIT);
 
                     _model.IsBindingLoading = false;
@@ -680,6 +687,42 @@ namespace MyWorkTracker
                 deleteLogically = false;
 
             _model.FireWorkItemDelete(_model.SelectedWorkItem, deleteLogically);
+
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void NotebookTopicAddButton_Click(object sender, RoutedEventArgs e)
+        {
+            string stringToAdd = NotebookTopicTextField.Text;
+
+            if (stringToAdd.Length > 0)
+            {
+                string[] topicsToAdd = stringToAdd.Split('>');
+
+                TreeViewItem selectedItem = (TreeViewItem) NotebookTopicTree.SelectedItem;
+                foreach (string topicStr in topicsToAdd)
+                {
+                    if (selectedItem == null)
+                    {
+                        TreeViewItem newItem = new TreeViewItem() { Header = topicStr.Trim() };
+                        NotebookTopicTree.Items.Add(newItem);
+                        selectedItem = newItem;
+                    }
+                    else
+                    {
+                        TreeViewItem newItem = new TreeViewItem() { Header = topicStr.Trim() };
+                        selectedItem.Items.Add(newItem);
+                        selectedItem = newItem;
+                    }
+                }
+
+            }
+
+
 
         }
     }

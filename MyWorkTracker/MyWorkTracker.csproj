@@ -82,7 +82,9 @@
     <Compile Include="Code\Importer\DataImportZeroThreeZero.cs" />
     <Compile Include="Code\Exporter\IDataExport.cs" />
     <Compile Include="Code\Importer\IDataImport.cs" />
+    <Compile Include="Code\NotebookTopic.cs" />
     <Compile Include="Code\Preference.cs" />
+    <Compile Include="Code\Utilities\StringMethods.cs" />
     <Compile Include="Code\WorkItemStatus.cs" />
     <Compile Include="Code\WorkItemStatusEntry.cs" />
     <Compile Include="ExportWindow.xaml.cs">
@@ -95,6 +97,7 @@
       <DependentUpon>PreferenceDialog.xaml</DependentUpon>
     </Compile>
     <Compile Include="Code\WorkItemImportListEntry.cs" />
+    <Compile Include="Code\CheckListItem.cs" />
     <Page Include="DueDateDialog.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -122,7 +125,7 @@
     <Compile Include="Code\AppAction.cs" />
     <Compile Include="Code\AppEventArgs.cs" />
     <Compile Include="Code\DataEntryMode.cs" />
-    <Compile Include="Code\DateMethods.cs" />
+    <Compile Include="Code\Utilities\DateMethods.cs" />
     <Compile Include="Code\JournalEntry.cs" />
     <Compile Include="Code\MWTController.cs" />
     <Compile Include="Code\MWTModel.cs" />
@@ -231,6 +234,32 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Images\calendar_save.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\find.png" />
+    <Resource Include="Images\notebook-topic_add.png" />
+    <Resource Include="Images\notebook-topic_delete.png" />
+    <Resource Include="Images\notebook-topic_edit.png" />
+    <Resource Include="Images\notebook_add.png" />
+    <Resource Include="Images\notebook_delete.png" />
+    <Resource Include="Images\notebook_edit.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\checklist.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\checklist_add.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\checklist_delete.png" />
+    <Resource Include="Images\checklist_edit.png" />
+    <Resource Include="Images\go-down.png" />
+    <Resource Include="Images\go-up.png" />
+    <Resource Include="Images\text_indent.png" />
+    <Resource Include="Images\text_indent_remove.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\tick.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="packages\System.Data.SQLite.Core.1.0.110.0\build\net46\System.Data.SQLite.Core.targets" Condition="Exists('packages\System.Data.SQLite.Core.1.0.110.0\build\net46\System.Data.SQLite.Core.targets')" />

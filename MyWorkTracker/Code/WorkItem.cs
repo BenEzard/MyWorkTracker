@@ -34,6 +34,22 @@ namespace MyWorkTracker.Code
 
         public ObservableCollection<JournalEntry> Journals = new ObservableCollection<JournalEntry>();
 
+        private bool _areChecklistsLoaded = false;
+        /// <summary>
+        /// Confirms if an attempt has been made to load the CheckList for the WorkItem.
+        /// Note this can be true, and the collection can still be empty (if there are no CheckListItems for the WorkItem).
+        /// </summary>
+        public bool AreCheckListsLoaded
+        {
+            get { return _areChecklistsLoaded; }
+            set { 
+                _areChecklistsLoaded = true; 
+                OnPropertyChanged(); 
+            }
+        }
+
+        public ObservableCollection<CheckListItem> CheckListItems = new ObservableCollection<CheckListItem>();
+
         public WorkItem()
         {
 
