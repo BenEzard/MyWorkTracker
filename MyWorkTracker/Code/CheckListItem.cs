@@ -9,6 +9,8 @@ namespace MyWorkTracker
 {
     public class CheckListItem : BaseDBElement
     {
+        public int WorkItemID { get; set; }
+
         public int SortOrder { get; set; }
 
         public int Indent { get; set; }
@@ -34,19 +36,24 @@ namespace MyWorkTracker
             }
         }
 
-
+        private bool _isCompleted;
         public bool IsCompleted
         {
             get
             {
-                if (_completionDateTime.HasValue)
-                    return true;
-                else
-                    return false;
+                return _isCompleted;
             }
             set
             {
-                _completionDateTime = DateTime.Now;
+                _isCompleted = value;
+                if (value)
+                {
+                    _completionDateTime = DateTime.Now;
+                }
+                else
+                {
+                    _completionDateTime = null;
+                }
                 OnPropertyChanged();
             }
         }
@@ -65,10 +72,13 @@ namespace MyWorkTracker
             set { _details = value; OnPropertyChanged(); }
         }
 
+        public CheckListItem() { }
+
         /// <summary>
         /// Create a new CheckListItem
         /// </summary>
         /// <param name="wiclID"></param>
+        /// <param name="workItemID"></param>
         /// <param name="task"></param>
         /// <param name="details"></param>
         /// <param name="dueDate"></param>
@@ -77,9 +87,10 @@ namespace MyWorkTracker
         /// <param name="createDate"></param>
         /// <param name="modifyDate"></param>
         /// <param name="deleteDate"></param>
-        public CheckListItem(int wiclID, string task, string details, int indent, DateTime? dueDate, DateTime? completionDate, int sortOrder, DateTime createDate, DateTime? modifyDate, DateTime? deleteDate)
+        public CheckListItem(int wiclID, int workItemID, string task, string details, int indent, DateTime? dueDate, DateTime? completionDate, int sortOrder, DateTime createDate, DateTime? modifyDate, DateTime? deleteDate)
         {
             DatabaseID = wiclID;
+            WorkItemID = workItemID;
             _task = task;
             _details = details;
             Indent = indent;
@@ -90,6 +101,22 @@ namespace MyWorkTracker
             ModificationDateTime = modifyDate;
             DeletionDateTime = deleteDate;
         }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="workItemID"></param>
+        /// <param name="task"></param>
+        /// <param name="details"></param>
+        /// <param name="dueDate"></param>
+        public CheckListItem(int workItemID, string task, string details, DateTime? dueDate)
+        {
+            WorkItemID = workItemID;
+            _task = task;
+            _details = details;
+            _dueDateTime = dueDate;
+        }
+
 
     }
 }

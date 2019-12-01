@@ -302,24 +302,15 @@
                                 <DockPanel>
                                     <StackPanel DockPanel.Dock="Top" Orientation="Horizontal">
                                         <TextBlock FontSize="14" FontWeight="Normal" Foreground="Black" Margin="5" VerticalAlignment="Center">Task Checklist</TextBlock>
-                                        <Button Name="AddCheckListItemButton"
-                                        Background="Transparent" Margin="20,0,0,0" BorderThickness="0" ToolTip="Add Check Item" VerticalAlignment="Center">
+                                        <Button Name="SetCheckListModeToAddButton" Click="SetCheckListModeToAddButton_Click"
+                                            Background="Transparent" Margin="20,0,0,0" BorderThickness="0" ToolTip="Add Check Item" VerticalAlignment="Center">
                                             <Image Source="Images\checklist_add.png" Width="26" />
                                         </Button>
-                                        <Button Name="EditCheckListItemButton"
-                                        Background="Transparent" Margin="0,0,0,0" BorderThickness="0" ToolTip="Edit Check Item" VerticalAlignment="Center">
-                                            <Image Source="Images\checklist_edit.png" Width="26" />
-                                        </Button>
-                                        <Button Name="DeleteCheckListItemButton"
-                                        Background="Transparent" Margin="0,0,0,0" BorderThickness="0" ToolTip="Delete Check Item" VerticalAlignment="Center">
-                                            <Image Source="Images\checklist_delete.png" Width="26" />
-                                        </Button>
-                                        <Separator />
-                                        <Button Name="CheckListItemUpButton"
+                                        <Button Name="CheckListItemUpButton" Click="CheckListItemMoveButton_Click"
                                         Background="Transparent" Margin="0,0,0,0" BorderThickness="0" ToolTip="Move Up" VerticalAlignment="Center">
                                             <Image Source="Images\go-up.png" Width="26" />
                                         </Button>
-                                        <Button Name="CheckListItemDownButton"
+                                        <Button Name="CheckListItemDownButton" Click="CheckListItemMoveButton_Click"
                                         Background="Transparent" Margin="0,0,0,0" BorderThickness="0" ToolTip="Move Down" VerticalAlignment="Center">
                                             <Image Source="Images\go-down.png" Width="26" />
                                         </Button>
@@ -335,13 +326,18 @@
                                         Background="Transparent" Margin="0,0,0,0" BorderThickness="0" ToolTip="Complete All" VerticalAlignment="Center">
                                             <Image Source="Images\tick.png" Width="26" />
                                         </Button>
+                                        <Button Name="DeleteCheckListItemButton"
+                                        Background="Transparent" Margin="0,0,0,0" BorderThickness="0" ToolTip="Delete Check Item" VerticalAlignment="Center">
+                                            <Image Source="Images\checklist_delete.png" Width="26" />
+                                        </Button>
                                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                            <TextBlock Text="Outstanding:" Foreground="Black" Margin="10,0,0,0" />
-                                            <TextBlock Name="OutstandingCheckListTextBlock" Text="XXX" Foreground="Black" Margin="5,0,0,0" />
-                                            <TextBlock Text="Overdue:" Foreground="Black" Margin="10,0,0,0" />
-                                            <TextBlock Name="OverdueCheckListTextBlock" Text="XXX" Foreground="PaleVioletRed" Margin="5,0,0,0" />
+                                            <TextBlock Text="Outstanding:" Foreground="Black" Margin="10,0,0,0" ToolTip="The number of Tasks incomplete."/>
+                                            <TextBlock Name="OutstandingCheckListTextBlock" Text="{Binding CheckListTotalOutstandingCount}" Foreground="Black" Margin="5,0,0,0" ToolTip="The number of Tasks incomplete." />
+                                            <TextBlock Text=" (" Foreground="Black" />
+                                            <TextBlock Name="OverdueCheckListTextBlock" Text="{Binding CheckListOverdueCount}" Foreground="PaleVioletRed" ToolTip="The number of Tasks incomplete, that are overdue."/>
+                                            <TextBlock Text=")" Foreground="Black" />
                                             <TextBlock Text="Completed:" Foreground="Black" Margin="10,0,0,0" />
-                                            <TextBlock Name="CompletedCheckListTextBlock" Text="XXX" Foreground="Black" Margin="5,0,0,0" />
+                                            <TextBlock Name="CompletedCheckListTextBlock" Text="{Binding CheckListCompletedCount}" Foreground="Black" Margin="5,0,0,0" />
                                         </StackPanel>
                                     </StackPanel>
                                     <Grid>
@@ -349,28 +345,34 @@
                                             <RowDefinition Height="*"/>
                                         </Grid.RowDefinitions>
                                         <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="130*" />
+                                            <ColumnDefinition Width="27*"/>
+                                            <ColumnDefinition Width="188*"/>
+                                            <ColumnDefinition Width="345*"/>
                                         </Grid.ColumnDefinitions>
                                         <ListBox Name="WorkItemCheckList" 
-                                                 Grid.Row="0" Grid.Column="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled" Background="LightYellow" Grid.RowSpan="2">
+                                            SelectionMode="Single"
+                                            Grid.Row="0" Grid.Column="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled" Background="LightYellow" Grid.ColumnSpan="3" SelectionChanged="WorkItemCheckList_SelectionChanged">
                                             <ListBox.ItemTemplate>
                                                 <DataTemplate>
                                                     <Grid>
                                                         <Grid.ColumnDefinitions>
                                                             <ColumnDefinition Width="*" />
-                                                            <ColumnDefinition Width="*" />
-                                                            <ColumnDefinition Width="5*" />
-                                                            <ColumnDefinition Width="*" />
+                                                            <ColumnDefinition Width="4*" />
                                                         </Grid.ColumnDefinitions>
-                                                        <CheckBox Grid.Row="0" Grid.Column="0" IsChecked="{Binding IsCompleted}" VerticalAlignment="Center"/>
-                                                        <TextBlock Grid.Row="0" Grid.Column="1" Text="" Width="{Binding Indent,Mode=OneTime}"/>
-                                                        <TextBlock Grid.Row="0" Grid.Column="2" Text="{Binding Task}" TextWrapping="WrapWithOverflow" Margin="5,0,0,0"/>
+                                                        <Grid.RowDefinitions>
+                                                            <RowDefinition Height="Auto" />
+                                                        </Grid.RowDefinitions>
+                                                        <StackPanel Orientation="Horizontal" Grid.Row="0" Grid.Column="0">
+                                                            <TextBlock Text="" Width="{Binding Indent,Mode=OneTime}"/>
+                                                            <CheckBox IsChecked="{Binding IsCompleted}" VerticalAlignment="Center"/>
+                                                        </StackPanel>
+                                                        <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding Task}" TextWrapping="WrapWithOverflow" Margin="5,0,0,0"/>
                                                     </Grid>
                                                 </DataTemplate>
                                             </ListBox.ItemTemplate>
                                         </ListBox>
-                                        <StackPanel Orientation="Vertical" Grid.Column="1" Grid.Row="0" Margin="10,0,0,0" Grid.RowSpan="2">
+                                        <StackPanel Orientation="Vertical" Grid.Column="3" Grid.Row="0" Margin="10,0,0,0">
                                             <Grid>
                                                 <Grid.ColumnDefinitions>
                                                     <ColumnDefinition Width="Auto" />
@@ -385,15 +387,25 @@
                                                     <RowDefinition Height="Auto" />
                                                     <RowDefinition Height="Auto" />
                                                 </Grid.RowDefinitions>
-                                                <TextBlock Text="Task:" Foreground="Black" Grid.Row="0" Grid.Column="0" HorizontalAlignment="Right"/>
-                                                <TextBox Width="180" Background="LightYellow" Margin="5,0,0,0" Grid.Row="0" Grid.Column="1" />
+                                                <TextBlock Text="Task:" Foreground="Black" Grid.Row="0" Grid.Column="0" HorizontalAlignment="Right" Margin="0,10,0,0" />
+                                                <TextBox Name="CheckListTaskTextBox" Text="{Binding SelectedCheckListItem.Task}"
+                                                    GotFocus="ControlGainsFocus" LostFocus="ControlLosesFocus"  TextChanged="CheckListTextUpdated" 
+                                                    TextWrapping="NoWrap"
+                                                    Width="180" Background="LightYellow" Grid.Row="0" Grid.Column="1" Margin="5,10,0,0"/>
                                                 <TextBlock Text="Details:" Foreground="Black" Grid.Row="1" Grid.Column="0" HorizontalAlignment="Right" />
-                                                <TextBox Width="180" Background="LightYellow" Margin="5,5,0,5" MinLines="5" Grid.Row="1" Grid.Column="1" />
+                                                <TextBox Name="CheckListDescriptionTextBox" Text="{Binding SelectedCheckListItem.Details}"
+                                                    GotFocus="ControlGainsFocus" LostFocus="ControlLosesFocus"  TextChanged="CheckListTextUpdated" 
+                                                    TextWrapping="WrapWithOverflow" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                                                    Width="180" Background="LightYellow" Margin="5,5,0,5" MinLines="5" Grid.Row="1" Grid.Column="1" />
                                                 <TextBlock Text="Due Date:" Foreground="Black" Grid.Row="2" Grid.Column="0" HorizontalAlignment="Right" />
-                                                <DatePicker Grid.Row="2" Grid.Column="1" Width="100" HorizontalAlignment="Left" Margin="13,0,0,0"/>
-                                                <StackPanel Grid.Row="3" Grid.ColumnSpan="2"  Visibility="Hidden">
-                                                    <Button Name="CreateOrEditChecklistButton" Click="ImportButton_Click" 
-                                                        Margin="0,5,0,0" Grid.Column="0" Grid.Row="0" Width="80" HorizontalAlignment="Right">
+                                                <DatePicker Name="CheckListDueDate" SelectedDate="{Binding SelectedCheckListItem.DueDateTime}"
+                                                            
+                                                    Grid.Row="2" Grid.Column="1" Width="100" HorizontalAlignment="Left" Margin="13,0,0,0" SelectedDateChanged="CheckListDueDate_SelectedDateChanged" />
+                                                <StackPanel Grid.Row="3" Grid.ColumnSpan="2">
+                                                    <!-- Visibility binding of below button not working properly: Visibility="{Binding IsCheckListInAddMode}" -->
+                                                    <Button Name="AddChecklistItemButton" Click="CreateWorkItemCheckListItem_Click" 
+                                                        IsEnabled="False"
+                                                        Margin="0,10,0,0" Grid.Column="0" Grid.Row="0" Width="80" HorizontalAlignment="Right">
                                                         <StackPanel Orientation="Horizontal">
                                                             <Image Source="images\checklist_add.png" Width="26" Margin="5,0,5,0" />
                                                             <TextBlock Text="Create" VerticalAlignment="Center" Margin="0,0,5,0" />
@@ -401,11 +413,11 @@
                                                     </Button>
                                                 </StackPanel>
                                                 <TextBlock Text="Completion:" Foreground="Gray" Grid.Row="4" Grid.Column="0" HorizontalAlignment="Right" />
-                                                <TextBlock Margin="5,5,0,5" Grid.Row="4" Grid.Column="1" />
+                                                <TextBlock Margin="5,5,0,5" Grid.Row="4" Grid.Column="1" Text="{Binding SelectedCheckListItem.CompletionDateTime, StringFormat=\{0:dddd\, dd/MM HH:mm\}}" Foreground="Black" />
                                                 <TextBlock Text="Creation:" Foreground="Gray" Grid.Row="5" Grid.Column="0" HorizontalAlignment="Right" />
-                                                <TextBlock Margin="5,0,0,5" Grid.Row="5" Grid.Column="1" />
+                                                <TextBlock Margin="5,0,0,5" Grid.Row="5" Grid.Column="1" Text="{Binding SelectedCheckListItem.CreationDateTime, StringFormat=\{0:dddd\, dd/MM HH:mm\}}" Foreground="Black" />
                                                 <TextBlock Text="Modified:" Foreground="Gray" Grid.Row="6" Grid.Column="0" HorizontalAlignment="Right" />
-                                                <TextBlock Margin="5,0,0,5" Grid.Row="6" Grid.Column="1" />
+                                                <TextBlock Margin="5,0,0,5" Grid.Row="6" Grid.Column="1" Text="{Binding SelectedCheckListItem.ModificationDateTime, StringFormat=\{0:dddd\, dd/MM HH:mm\}}" Foreground="Black" />
                                             </Grid>
                                         </StackPanel>
 

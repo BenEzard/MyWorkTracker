@@ -3,6 +3,7 @@
            WorkItem_ID,
            TaskText,
            TaskDetails,
+		   Indent,
            DueDateTime,
            CompletionDateTime,
            ItemSortOrder,

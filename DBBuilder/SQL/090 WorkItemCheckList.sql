@@ -4,10 +4,11 @@
                                        NOT NULL,
     TaskText             VARCHAR (100) NOT NULL,
     TaskDetails          VARCHAR (500),
+	Indent				 INT DEFAULT (0),
     DueDateTime          DATETIME,
     CompletionDateTime   DATETIME,
     ItemSortOrder        INTEGER,
-    CreationDateTime     DATETIME      DEFAULT (CURRENT_TIMESTAMP),
+    CreationDateTime     DATETIME,
     ModificationDateTime DATETIME,
     DeletionDateTime     DATETIME
 );
@@ -17,12 +18,13 @@ CREATE TRIGGER IF NOT EXISTS WorkItemCheckList_Insert
             ON WorkItemCheckList
       FOR EACH ROW
 BEGIN
-    UPDATE WorkItemCheckList
+UPDATE WorkItemCheckList
        SET ItemSortOrder = (
                SELECT IFNULL( (MAX(ItemSortOrder) + 10), 10) 
                  FROM WorkItemCheckList
-                WHERE WorkItem_ID = new.WorkItem_ID
-           );
+                 WHERE WorkItem_ID = new.WorkItem_ID
+           )
+WHERE WorkItemCheckList_ID = new.WorkItemCheckList_ID;
 END;
 
 

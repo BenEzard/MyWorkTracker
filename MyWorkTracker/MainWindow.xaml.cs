@@ -124,11 +124,11 @@ namespace MyWorkTracker
                     JournalEntryList.ItemsSource = _model.SelectedWorkItem.Journals;
 
                     //  Check to see if the CheckList for this WorkItem have been loaded. Load them if not.
-                    if (_model.SelectedWorkItem.AreCheckListsLoaded == false)
+                    if (_model.AreCheckListsLoaded(wi.Meta.WorkItem_ID) == false)
                     {
                         _controller.LoadWorkItemCheckLists(_model.SelectedWorkItem);
                     }
-                    WorkItemCheckList.ItemsSource = _model.SelectedWorkItem.CheckListItems;
+                    WorkItemCheckList.ItemsSource = _model.CheckListItems;
 
                     _model.SetApplicationMode(DataEntryMode.EDIT);
 
@@ -299,8 +299,47 @@ namespace MyWorkTracker
                 case AppAction.WORK_ITEM_DELETE_PHYSICAL:
                     _controller.DeleteWorkItem(args.CurrentWorkItemSelection, false);
                     break;
+
+                case AppAction.CHECKLIST_ITEM_ADDED:
+                    CheckListItem i2 = (CheckListItem)args.Object1;
+                    _model.CheckListItems.Add(i2);
+                    _controller.SetCheckListMode(DataEntryMode.EDIT);
+                    WorkItemCheckList.SelectedItem = i2;
+                    break;
+                case AppAction.CHECKLIST_ITEM_SELECTED:
+                    if (_model.WorkItemCheckListDBNeedsUpdating)
+                    {
+                        Console.WriteLine("an item needs updating");
+                        CheckListItem cli = (CheckListItem)args.Object1;
+                        _controller.UpdateDBCheckListItem(cli, 0);
+                    }
+                    
+                    break;
+                case AppAction.CHECKLIST_ITEM_MOVED:
+                    CheckListItem cli3 = (CheckListItem)args.Object1;
+                    ReloadCheckListItems();
+                    _model.SelectedCheckListItem = cli3; // TODO this isn't working. The item moved up doesn't have focus in the list.
+                    break;
+                case AppAction.CHECKLIST_MODE_CHANGED:
+                    if (_model.CheckListItemMode == DataEntryMode.ADD)
+                    {
+                        AddChecklistItemButton.IsEnabled = true;
+                        CheckListItem cli2 = new CheckListItem();
+                        _model.SelectedCheckListItem = cli2;
+                    }
+                    else
+                    {
+                        AddChecklistItemButton.IsEnabled = false;
+                    }
+                    break;
             }
 
+        }
+
+        internal void ReloadCheckListItems()
+        {
+            _model.CheckListItems.Clear();
+            _controller.LoadWorkItemCheckLists(_model.SelectedWorkItem, false);
         }
 
         /// <summary>
@@ -510,8 +549,13 @@ namespace MyWorkTracker
                 UpdateWorkItemDBAsRequired();
             }
 
+            if (_model.WorkItemCheckListDBNeedsUpdating)
+            {
+                _controller.UpdateDBCheckListItem(_model.SelectedCheckListItem, 0);
+            }
+
             // If set as a preference, save the window location.
-            if (_model.GetAppPreferenceValue(PreferenceName.SAVE_WINDOW_COORDS_ON_EXIT).Equals("1")) {
+            if (_model.GetAppPreferenceValue(PreferenceName.SAVE_WINDOW_COORDS_ON_EXIT).Equals("1", StringComparison.CurrentCultureIgnoreCase)) {
                 string coords = $"{this.Left},{this.Top},{this.Width},{this.Height}";
                 _model.FireUpdateAppPreference(PreferenceName.APPLICATION_WINDOW_COORDS, coords);
             }
@@ -724,6 +768,86 @@ namespace MyWorkTracker
 
 
 
+        }
+
+        private void SetCheckListModeToAddButton_Click(object sender, RoutedEventArgs e)
+        {
+            _controller.SetCheckListMode(DataEntryMode.ADD);
+            CheckListTaskTextBox.Focus();
+        }
+
+        private void CreateWorkItemCheckListItem_Click(object sender, RoutedEventArgs e)
+        {
+            // Get the data from the controls
+            string task = CheckListTaskTextBox.Text;
+            string description = CheckListDescriptionTextBox.Text;
+            
+            DateTime? dueDate = CheckListDueDate.SelectedDate;
+//            if (dueDate.HasValue == false)
+//                dueDate = DateTime.Now; // TODO change to a Setting.
+            
+            string[] taskSplit = task.Split('|');
+            foreach (string taskPortion in taskSplit)
+            {
+                CheckListItem cli = new CheckListItem(_model.SelectedWorkItem.Meta.WorkItem_ID, taskPortion.Trim(), description, dueDate);
+                _controller.AddCheckListItem(cli);
+            }
+
+        }
+
+        private void WorkItemCheckList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            CheckListItem cli = (CheckListItem) WorkItemCheckList.SelectedItem;
+            _model.SelectedCheckListItem = cli;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void CheckListItemMoveButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Determine which button was pressed - up or down
+            bool isUp = false;
+            Button selectedButton = (Button)sender;
+            if (selectedButton.Name.Equals("CheckListItemUpButton", StringComparison.CurrentCultureIgnoreCase))
+                isUp = true;
+
+            // Get the currently selected item.
+            CheckListItem itemSelected = (CheckListItem) WorkItemCheckList.SelectedItem;
+            int indexOfSelectedItem = WorkItemCheckList.Items.IndexOf(itemSelected);
+
+            CheckListItem itemBefore = null;
+            CheckListItem itemAfter = null;
+            if (indexOfSelectedItem > 0)
+                itemBefore = (CheckListItem) WorkItemCheckList.Items.GetItemAt(indexOfSelectedItem - 1);
+            if (indexOfSelectedItem + 1 < WorkItemCheckList.Items.Count)
+                itemAfter = (CheckListItem) WorkItemCheckList.Items.GetItemAt(indexOfSelectedItem + 1);
+
+            // If direction requested isn't UP and there isn't an object above it, 
+            //  OR direction requested isn't DOWN and there isn't an object below it, 
+            //  then do nothing.
+            if ((isUp) && (itemBefore != null))
+            {
+                _controller.MoveCheckListItem(itemSelected, itemBefore, true);
+            }
+            else if ((isUp == false) && (itemAfter != null))
+            {
+                _controller.MoveCheckListItem(itemSelected, itemAfter, false);
+            }
+        }
+
+        private void CheckListTextUpdated(object sender, TextChangedEventArgs e)
+        {
+            if (_model.IsBindingLoading == false)
+                _model.WorkItemCheckListDBNeedsUpdating = true;
+        }
+
+        private void CheckListDueDate_SelectedDateChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (_model.IsBindingLoading == false)
+                _model.WorkItemCheckListDBNeedsUpdating = true;
         }
     }
 }

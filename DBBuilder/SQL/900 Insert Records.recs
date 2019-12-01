@@ -83,3 +83,9 @@ INSERT INTO NotebookTopic (NotebookTopic_ID, ParentTopic_ID, Topic) VALUES (13, 
 INSERT INTO NotebookTopic (NotebookTopic_ID, ParentTopic_ID, Topic) VALUES (14, 12, 'MICA');
 INSERT INTO NotebookTopic (NotebookTopic_ID, ParentTopic_ID, Topic) VALUES (15, 12, 'H2H');
 INSERT INTO NotebookTopic (NotebookTopic_ID, ParentTopic_ID, Topic) VALUES (16, 15, 'SHS Reporting');
+
+INSERT INTO WorkItemCheckList (WorkItem_ID, TaskText) VALUES (1, 'Start the Project');
+INSERT INTO WorkItemCheckList (WorkItem_ID, TaskText, Indent) VALUES (1, 'Sub Item', 10);
+INSERT INTO WorkItemCheckList (WorkItem_ID, TaskText, TaskDetails) VALUES (1, 'A really long task item that has stuff in it. Its a long one. Its a long one.','With more details than a cat in the hat lead by a rat with a zat-nik-ata.');
+
+INSERT INTO WorkItemCheckList (WorkItem_ID, TaskText) VALUES (2, 'Do this checkbox thing.');

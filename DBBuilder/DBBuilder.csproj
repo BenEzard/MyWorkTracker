@@ -58,41 +58,42 @@
     <None Include="SQL\900 Insert Records.recs" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="SQL\05 WorkItem.sql">
+    <Content Include="SQL\005 WorkItem.sql">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="SQL\10 DueDate.sql">
+    <Content Include="SQL\010 DueDate.sql">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="SQL\15 Journal.sql" />
-    <Content Include="SQL\16 vwActiveJournal.sql" />
-    <Content Include="SQL\20 Setting.sql">
+    <Content Include="SQL\015 Journal.sql" />
+    <Content Include="SQL\016 vwActiveJournal.sql" />
+    <Content Include="SQL\020 Setting.sql">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="SQL\25 Status.sql">
+    <Content Include="SQL\025 Status.sql">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="SQL\30 WorkItemStatus.sql">
+    <Content Include="SQL\030 WorkItemStatus.sql">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="SQL\40 vwMostRecentDueDate.sql">
+    <Content Include="SQL\040 vwMostRecentDueDate.sql">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="SQL\45 vwMostRecentWorkItemStatus.sql">
+    <Content Include="SQL\045 vwMostRecentWorkItemStatus.sql">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="SQL\55 vwWorkItem.sql">
+    <Content Include="SQL\055 vwWorkItem.sql">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="SQL\60 vwExtractWorkItem_ZeroThreeZero.sql" />
-    <Content Include="SQL\60 vwExtractWorkItem_ZeroThreeOne.sql" />
-    <Content Include="SQL\65 vwExtractLatestWorkItemStatus_ZeroThreeOne.sql" />
-    <Content Include="SQL\65 vwExtractLatestWorkItemStatus_ZeroThreeZero.sql" />
-    <Content Include="SQL\70 vwExtractLatestDueDate_ZeroThreeZero.sql" />
-    <Content Include="SQL\75 vwExtractAllJournal_ZeroThreeZero.sql" />
-    <Content Include="SQL\80 NotebookTopic.sql" />
-    <Content Include="SQL\85 vwNotebookTopic.sql" />
-    <Content Include="SQL\90 WorkItemCheckList.sql" />
+    <Content Include="SQL\060 vwExtractWorkItem_ZeroThreeZero.sql" />
+    <Content Include="SQL\060 vwExtractWorkItem_ZeroThreeOne.sql" />
+    <Content Include="SQL\065 vwExtractLatestWorkItemStatus_ZeroThreeOne.sql" />
+    <Content Include="SQL\065 vwExtractLatestWorkItemStatus_ZeroThreeZero.sql" />
+    <Content Include="SQL\070 vwExtractLatestDueDate_ZeroThreeZero.sql" />
+    <Content Include="SQL\075 vwExtractAllJournal_ZeroThreeZero.sql" />
+    <Content Include="SQL\080 NotebookTopic.sql" />
+    <Content Include="SQL\085 vwNotebookTopic.sql" />
+    <Content Include="SQL\090 WorkItemCheckList.sql" />
+    <Content Include="SQL\100 vwWorkItemCheckList_ConstraintData.sql" />
     <Content Include="SQL\95 vwWorkItemCheckList.sql" />
   </ItemGroup>
   <ItemGroup>

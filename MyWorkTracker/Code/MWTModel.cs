@@ -44,6 +44,95 @@ namespace MyWorkTracker.Code
 
         public ObservableCollection<NotebookTopic> NotebookTopics = new ObservableCollection<NotebookTopic>();
 
+        private int _checkListOverdueCount = 0;
+        public int CheckListOverdueCount
+        {
+            get { return _checkListOverdueCount; }
+            set { _checkListOverdueCount = value; }
+        }
+
+        private int _checkListOutstandingCount = 0;
+        public int CheckListOutstandingCount
+        {
+            get { return _checkListOutstandingCount; }
+            set { _checkListOutstandingCount = value; }
+        }
+
+        public int CheckListTotalOutstandingCount
+        {
+            get { return _checkListOutstandingCount + _checkListOverdueCount; }
+        }
+
+        private int _checkListCompletedCount = 0;
+        public int CheckListCompletedCount
+        {
+            get { return _checkListCompletedCount; }
+            set { _checkListCompletedCount = value; }
+        }
+
+        private CheckListItem _selectedCheckListItem = null;
+        public CheckListItem SelectedCheckListItem
+        {
+            get { return _selectedCheckListItem; }
+            set 
+            {
+                if (value != null)
+                {
+                    Console.WriteLine($"Changed selected item to: {value.Task}... firing event");
+                    _selectedCheckListItem = value;
+                    OnPropertyChanged("");
+                    FireWorkItemCheckListItemSelected(SelectedWorkItem, _selectedCheckListItem);
+                }
+            }
+        }
+
+        public bool WorkItemCheckListDBNeedsUpdating { get; set; } = false;
+
+        public ObservableCollection<CheckListItem> CheckListItems = new ObservableCollection<CheckListItem>();
+
+        internal int ChecklistsLoadedForWorkItemID = -1;
+        
+        /// <summary>
+        /// Checks to see if the Checklists are loaded for WorkItem
+        /// Note this can be true, and the collection can still be empty (if there are no CheckListItems for the WorkItem).
+        /// </summary>
+        public bool AreCheckListsLoaded(int workItemID)
+        {
+            bool rValue = false;
+
+            if (ChecklistsLoadedForWorkItemID == workItemID)
+                rValue = true;
+
+            return rValue;
+        }
+
+        /// <summary>
+        /// This variable flags the data entry mode of the CheckListItem area.
+        /// When the mode is set to Add, different functionality is exposed.
+        /// </summary>
+        private DataEntryMode _checkListItemMode = DataEntryMode.NOT_SET;
+        public DataEntryMode CheckListItemMode
+        {
+            get { return _checkListItemMode; }
+            set
+            {
+                _checkListItemMode = value;
+                FireCheckListModeChanged();
+            }
+        }
+
+        public bool IsCheckListInAddMode
+        {
+            get
+            {
+                if (_checkListItemMode == DataEntryMode.ADD)
+                    return true;
+                else
+                    return false;
+            }
+        }
+
+
         /// <summary>
         /// Clear all WorkItems from both the active and closed collections (in memory).
         /// </summary>
@@ -271,6 +360,18 @@ namespace MyWorkTracker.Code
             appEvent?.Invoke(this, eventArgs);
         }
 
+        public void FireWorkItemCheckListItemAdded(WorkItem wi, CheckListItem cli)
+        {
+            var eventArgs = new AppEventArgs(AppAction.CHECKLIST_ITEM_ADDED, wi, cli);
+            appEvent?.Invoke(this, eventArgs);
+        }
+
+        private void FireWorkItemCheckListItemSelected(WorkItem wi, CheckListItem cli)
+        {
+            var eventArgs = new AppEventArgs(AppAction.CHECKLIST_ITEM_SELECTED, wi, cli);
+            appEvent?.Invoke(this, eventArgs);
+        }
+
         /// <summary>
         /// Fire a notification that a Work Item Status has changed for a WorkItem.
         /// </summary>
@@ -282,6 +383,13 @@ namespace MyWorkTracker.Code
             var eventArgs = new AppEventArgs(AppAction.WORK_ITEM_STATUS_CHANGED, wi, newStatus, oldStatus);
             appEvent?.Invoke(this, eventArgs);
         }
+
+        public void FireCheckListItemMoved(CheckListItem cli, bool moveUp)
+        {
+            var eventArgs = new AppEventArgs(AppAction.CHECKLIST_ITEM_MOVED, SelectedWorkItem, cli, (Object)moveUp);
+            appEvent?.Invoke(this, eventArgs);
+        }
+
 
         /// <summary>
         /// Fire a notification that a Work Item has been requested to be deleted./
@@ -376,6 +484,13 @@ namespace MyWorkTracker.Code
             var eventArgs = new AppEventArgs(AppAction.DATA_IMPORT);
             appEvent?.Invoke(this, eventArgs);
         }
+
+        internal void FireCheckListModeChanged()
+        {
+            var eventArgs = new AppEventArgs(AppAction.CHECKLIST_MODE_CHANGED);
+            appEvent?.Invoke(this, eventArgs);
+        }
+
 
         /// <summary>
         /// Fire a notification that a Journal Entry has been requested to be deleted.

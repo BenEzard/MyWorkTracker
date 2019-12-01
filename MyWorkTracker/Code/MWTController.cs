@@ -39,16 +39,14 @@ namespace MyWorkTracker.Code
         /// Add a CheckListItem to a Work Item.
         /// Note that it cannot have the same text as another item
         /// </summary>
-        /// <param name="wi"></param>
         /// <param name="item"></param>
-        public void AddCheckListItem(WorkItem wi, CheckListItem item)
+        public void AddCheckListItem(CheckListItem item)
         {
-            if (wi == null) throw new ArgumentNullException("wi");
             if (item == null) throw new ArgumentNullException("item");
 
             // Check to see if the text is identical to an existing CheckListItem on the WorkItem.
             bool canAdd = true;
-            foreach (CheckListItem i in wi.CheckListItems)
+            foreach (CheckListItem i in _model.CheckListItems)
             {
                 if (i.Task.Equals(item.Task)) {
                     canAdd = false;
@@ -57,7 +55,67 @@ namespace MyWorkTracker.Code
             }
 
             if (canAdd)
-                wi.CheckListItems.Add(item);
+            {
+                // TODO change to a call.
+                //_model.CheckListItems.Add(item);
+                InsertDBWorkItemCheckListItem(item);
+                _model.FireWorkItemCheckListItemAdded(_model.SelectedWorkItem, item);
+
+            }
+        }
+
+        public int InsertDBWorkItemCheckListItem(CheckListItem cli)
+        {
+            // Insert the record
+            int rowID = -1;
+            using (var connection = new SQLiteConnection(dbConnectionString))
+            {
+                using (var cmd = new SQLiteCommand(connection))
+                {
+                    connection.Open();
+                    cmd.CommandText = "INSERT INTO WorkItemCheckList (WorkItem_ID, TaskText, TaskDetails, DueDateTime, CreationDateTime)" +
+                        "VALUES (@WorkItemID, @Task, @Details, @DueDateTime, @CreationDateTime)";
+                    cmd.Parameters.AddWithValue("@WorkItemID", cli.WorkItemID);
+                    cmd.Parameters.AddWithValue("@Task", cli.Task);
+                    cmd.Parameters.AddWithValue("@Details", cli.Details);
+                    cmd.Parameters.AddWithValue("@DueDateTime", cli.DueDateTime);
+                    cmd.Parameters.AddWithValue("@CreationDateTime", DateTime.Now);
+                    cmd.ExecuteNonQuery();
+
+                    // Get the identity value
+                    cmd.CommandText = "SELECT last_insert_rowid()";
+                    rowID = (int)(Int64)cmd.ExecuteScalar();
+                    cli.CreationDateTime = DateTime.Now;
+                    cli.DatabaseID = rowID;
+
+                }
+                connection.Close();
+            }
+
+            // Pull the record data to get all the values that are initialised with DEFAULT constraints.
+            using (var connection = new SQLiteConnection(dbConnectionString))
+            {
+                using (var cmd = new SQLiteCommand(connection))
+                {
+                    connection.Open();
+                    string sql = "SELECT * FROM vwWorkItemCheckList_ConstraintData" +
+                        " WHERE WorkItem_ID = @workItemID";
+                    cmd.CommandText = sql;
+                    cmd.Parameters.AddWithValue("@workItemID", rowID);
+
+                    using (SQLiteDataReader reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            cli.Indent = Convert.ToInt32(reader["Indent"]);
+                            cli.SortOrder = Convert.ToInt32(reader["ItemSortOrder"]);
+                            DateTime creationDateTime = Convert.ToDateTime(reader["CreationDateTime"].ToString());
+                        }
+                    }
+                    connection.Close();
+                }
+            }
+            return rowID;
         }
 
         public void AddNotebookTopic(NotebookTopic topic)
@@ -156,14 +214,27 @@ namespace MyWorkTracker.Code
             // SelectedNode
         }
 
+        /// <summary>
+        /// Load the Checklist for the specified WorkItem.
+        /// Note that this isn't a Checklist *attached* to the WorkItem, but is stored in the main MWTModel.
+        /// </summary>
+        /// <param name="wi"></param>
+        /// <param name="loadDeleted"></param>
         internal void LoadWorkItemCheckLists(WorkItem wi, bool loadDeleted=false)
         {
+            // --- Reset values ---------------------------------------------
+            _model.CheckListItems.Clear();
+            _model.ChecklistsLoadedForWorkItemID = wi.Meta.WorkItem_ID;
+            _model.CheckListCompletedCount = 0;
+            _model.CheckListOutstandingCount = 0;
+            _model.CheckListOverdueCount = 0;
+
             using (var connection = new SQLiteConnection(dbConnectionString))
             {
                 using (var cmd = new SQLiteCommand(connection))
                 {
                     connection.Open();
-                    string sql = "SELECT * FROM vwOpenAndCompleteWorkItemCheckList" +
+                    string sql = "SELECT * FROM vwWorkItemCheckList" +
                         " WHERE WorkItem_ID = @workItemID";
                     if (loadDeleted == false)
                         sql += " AND DeletionDateTime IS NULL";
@@ -178,6 +249,7 @@ namespace MyWorkTracker.Code
                             CheckListItem cli = null;
 
                             int workItemCheckListID = Convert.ToInt32(reader["WorkItemCheckList_ID"]);
+                            int workItemID = Convert.ToInt32(reader["WorkItem_ID"]);
                             string taskText = (string)reader["TaskText"];
                             int indent = Convert.ToInt32(reader["Indent"]);
 
@@ -212,19 +284,29 @@ namespace MyWorkTracker.Code
                                 {
                                     deleteDateTime = Convert.ToDateTime(reader["DeletionDateTime"].ToString());
                                 }
-                                cli = new CheckListItem(workItemCheckListID, taskText, details, indent, dueDateTime, completionDateTime, sortOrder, creationDateTime, modifDateTime, deleteDateTime);
+                                cli = new CheckListItem(workItemCheckListID, workItemID, taskText, details, indent, dueDateTime, completionDateTime, sortOrder, creationDateTime, modifDateTime, deleteDateTime);
                             }
                             else
-                                cli = new CheckListItem(workItemCheckListID, taskText, details, indent, dueDateTime, completionDateTime, sortOrder, creationDateTime, modifDateTime, null);
+                                cli = new CheckListItem(workItemCheckListID, workItemID, taskText, details, indent, dueDateTime, completionDateTime, sortOrder, creationDateTime, modifDateTime, null);
 
-                            wi.CheckListItems.Add(cli);
+                            // --- Calculate totals -----------------------------------------
+                            if (reader["CompletionDateTime"] != DBNull.Value)
+                            {
+                                ++_model.CheckListCompletedCount;
+                            } 
+                            else
+                            {
+                                if ((dueDateTime.HasValue) && (dueDateTime.Value < DateTime.Now))
+                                    ++_model.CheckListOverdueCount;
+                                else
+                                    ++_model.CheckListOutstandingCount;
+                            }
+                            _model.FireWorkItemCheckListItemAdded(wi, cli);
                         }
                     }
                     connection.Close();
                 }
             }
-            wi.AreCheckListsLoaded = true;
-
         }
 
         /// <summary>
@@ -279,6 +361,38 @@ namespace MyWorkTracker.Code
 
             _model.FireCreateNewWorkItem(wi);
         }
+
+     /*   internal void UpdateDBWorkItemCheckListItem()
+        {
+            if (_model.SelectedCheckListItem == null)
+            {
+                _model.WorkItemCheckListDBNeedsUpdating = false;
+                return;
+            }
+
+            using (var connection = new SQLiteConnection(dbConnectionString))
+            {
+                using (var cmd = new SQLiteCommand(connection))
+                {
+                    connection.Open();
+
+                    cmd.CommandText = "UPDATE WorkItemCheckList" +
+                        " SET TaskText = @TaskText," +
+                        " TaskDetails = @TaskDetails," +
+                        " DueDateTime = @DueDate," +
+                        " ModificationDateTime = @modDateTime" +
+                        " WHERE WorkItemCheckList_ID = @dbID";
+                    cmd.Parameters.AddWithValue("@TaskText", _model.SelectedCheckListItem.Task);
+                    cmd.Parameters.AddWithValue("@TaskDetails", _model.SelectedCheckListItem.Details);
+                    cmd.Parameters.AddWithValue("@DueDate", _model.SelectedCheckListItem.DueDateTime);
+                    cmd.Parameters.AddWithValue("@modDateTime", DateTime.Now);
+                    cmd.Parameters.AddWithValue("@dbID", _model.SelectedCheckListItem.DatabaseID);
+                    cmd.ExecuteNonQuery();
+
+                    _model.WorkItemCheckListDBNeedsUpdating = false;
+                }
+            }
+        }*/
 
         /// <summary>
         /// Calculate the default Due Date (based on today + default Preferences)
@@ -360,459 +474,6 @@ namespace MyWorkTracker.Code
             }
             return rValue;
         }
-
-/*        /// <summary>
-        /// Export the Journal table as XML format.
-        /// </summary>
-        /// <param name="dbConnString"></param>
-        /// <param name="includeDeleted"></param>
-        /// <param name="workItemIDs"></param>
-        /// <returns></returns>
-        private protected XElement GetJournalTableAsXML(string dbConnString, bool includeDeleted, string workItemIDs)
-        {
-            // --- Get all WorkItem Journals ---------------------------------------
-            XElement allJournalsXML = new XElement("AllJournalEntries");
-            XElement workItemJournalEntriesXML = null;
-            XElement workItemJournalEntryXML = null;
-            int previousWorkItemID = -1;
-            using (var connection = new SQLiteConnection(dbConnString))
-            {
-                using (var cmd = new SQLiteCommand(connection))
-                {
-                    connection.Open();
-                    cmd.CommandText = "SELECT * FROM vwExtractAllJournal";
-                    int whereConditions = 0;
-                    if ((workItemIDs.Equals("") == false) || (includeDeleted == false))
-                    {
-                        cmd.CommandText += " WHERE";
-                    }
-                    if (workItemIDs.Equals("") == false)
-                    {
-                        ++whereConditions;
-                        cmd.CommandText += " (WorkItem_ID IN (@wiIDs))";
-                        cmd.Parameters.AddWithValue("@wiIDs", workItemIDs);
-                    }
-                    if (includeDeleted == false)
-                    {
-                        if (whereConditions > 0)
-                            cmd.CommandText += " AND ";
-
-                        cmd.CommandText += " JournalOrWorkItemDeleted = 0";
-                    }
-                    cmd.CommandText += " ORDER BY WorkItem_ID, CreationDateTime";
-
-                    using (SQLiteDataReader reader = cmd.ExecuteReader())
-                    {
-                        while (reader.Read())
-                        {
-                            int journalID = Convert.ToInt32(reader["Journal_ID"]);
-                            int currentWorkItemID = Convert.ToInt32(reader["WorkItem_ID"]);
-                            string header = "";
-                            string entry = "";
-                            if (reader["Header"] != DBNull.Value)
-                                header = (string)reader["Header"];
-                            if (reader["Entry"] != DBNull.Value)
-                                entry = (string)reader["Entry"];
-
-
-                            if (currentWorkItemID != previousWorkItemID)
-                            {
-                                previousWorkItemID = currentWorkItemID;
-                                if (workItemJournalEntriesXML != null)
-                                    allJournalsXML.Add(workItemJournalEntriesXML);
-
-                                workItemJournalEntriesXML = new XElement("JournalEntries", new XAttribute("WorkItem_ID", currentWorkItemID));
-                            }
-
-                            DateTime? creationDateTime = null;
-                            if (reader["CreationDateTime"] != DBNull.Value)
-                            {
-                                creationDateTime = Convert.ToDateTime(reader["CreationDateTime"].ToString());
-                            }
-                            DateTime? journalModDateTime = null;
-                            if (reader["ModificationDateTime"] != DBNull.Value)
-                            {
-                                journalModDateTime = Convert.ToDateTime(reader["ModificationDateTime"].ToString());
-                            }
-                            DateTime? journalDelDateTime = null;
-                            if (reader["JournalDeletionDateTime"] != DBNull.Value)
-                            {
-                                journalDelDateTime = Convert.ToDateTime(reader["DeletionDateTime"].ToString());
-                            }
-                            DateTime? workItemDelDateTime = null;
-                            if (reader["WorkItemDeletionDateTime"] != DBNull.Value)
-                            {
-                                workItemDelDateTime = Convert.ToDateTime(reader["WorkItemDeletionDateTime"].ToString());
-                            }
-                            bool isDeleted = Convert.ToBoolean(reader["JournalOrWorkItemDeleted"]);
-
-                            if (journalID == -1)
-                            {
-                                // Do nothing
-                            }
-                            else
-                            {
-                                workItemJournalEntryXML = new XElement(new XElement("JournalEntry", new XAttribute("Journal_ID", journalID)));
-                                workItemJournalEntryXML.Add(new XElement("Header", header),
-                                    new XElement("Entry", entry),
-                                    new XElement("CreationDateTime", creationDateTime),
-                                    new XElement("ModificationDateTime", journalModDateTime),
-                                    new XElement("JournalDeletionDateTime", journalDelDateTime));
-                                workItemJournalEntriesXML.Add(workItemJournalEntryXML);
-                            }
-                        }
-                        // Add the last one
-                        allJournalsXML.Add(workItemJournalEntriesXML);
-                    }
-                    connection.Close();
-                }
-            }
-            return allJournalsXML;
-        }
-
-        /// <summary>
-        /// Export the DueDate table as XML format.
-        /// </summary>
-        /// <param name="dbConnString"></param>
-        /// <param name="workItemIDs"></param>
-        /// <param name="onlyLastDueDate">If true, only the last DueDate per WorkItem will be included. If false, all Due Date changes.</param>
-        /// <returns></returns>
-        private protected XElement GetDueDateTableAsXML(string dbConnString, string workItemIDs, bool onlyLastDueDate)
-        {
-            /*
-               <DueDateChanges WorkItem_ID="2">
-                 <DueDateChange DueDate_ID="2">
-                    <DueDateTime>2019-08-05T13:45:00</DueDateTime>
-                    <ChangeReason />
-                    <CreationDate>2019-08-12T09:22:59</CreationDate>
-                    <DeletionDate>2019-08-12T09:22:59</DeletionDate>
-                 </DueDateChange>
-              </DueDateChanges>
-             */
-/*
-            // --- Get all WorkItem Due Dates --------------------------------------
-            XElement allDueDatesXML = new XElement("AllDueDateChanges");
-            XElement wiDueDatesXML = null;
-            XElement workItemDueDateXML = null;
-            int previousWorkItemID = -1;
-            using (var connection = new SQLiteConnection(dbConnString))
-            {
-                using (var cmd = new SQLiteCommand(connection))
-                {
-                    connection.Open();
-                    cmd.CommandText = "SELECT * FROM ";
-                    if (onlyLastDueDate)
-                        cmd.CommandText += "vwExtractLatestDueDate ";
-                    else
-                        cmd.CommandText += "DueDate ";
-
-                    if (workItemIDs.Equals("") == false) {
-                        cmd.CommandText += " WHERE WorkItem_ID IN (@ids)";
-                        cmd.Parameters.AddWithValue("@ids", workItemIDs);
-                    }
-                    cmd.CommandText += " ORDER BY WorkItem_ID, CreationDateTime ASC";
-
-                    using (SQLiteDataReader reader = cmd.ExecuteReader())
-                    {
-                        while (reader.Read())
-                        {
-                            int currentWorkItemID = Convert.ToInt32(reader["WorkItem_ID"]);
-
-                            if (currentWorkItemID != previousWorkItemID)
-                            {
-                                previousWorkItemID = currentWorkItemID;
-                                if (wiDueDatesXML != null)
-                                    allDueDatesXML.Add(wiDueDatesXML);
-                            }
-
-                            DateTime? creationDateTime = null;
-                            if (reader["CreationDateTime"] != DBNull.Value)
-                            {
-                                creationDateTime = Convert.ToDateTime(reader["CreationDateTime"].ToString());
-                            }
-                            DateTime? deletionDateTime = null;
-                            if (reader["DeletionDateTime"] != DBNull.Value)
-                            {
-                                deletionDateTime = Convert.ToDateTime(reader["DeletionDateTime"].ToString());
-                            }
-                            string changeReason = null;
-                            if (reader["ChangeReason"] != DBNull.Value)
-                            {
-                                changeReason = (string)(reader["ChangeReason"]);
-                            }
-
-                            wiDueDatesXML = new XElement("DueDateChanges", new XAttribute("WorkItem_ID", currentWorkItemID));
-
-                            workItemDueDateXML = new XElement("DueDateChange", new XAttribute("DueDate_ID", Convert.ToInt32(reader["DueDate_ID"])));
-                            workItemDueDateXML.Add(new XElement("DueDateTime", Convert.ToDateTime(reader["DueDateTime"])),
-                                new XElement("ChangeReason", changeReason),
-                                new XElement("CreationDate", creationDateTime),
-                                new XElement("DeletionDate", deletionDateTime));
-
-                            wiDueDatesXML.Add(workItemDueDateXML);
-                        }
-                        // Add the last one
-                        allDueDatesXML.Add(wiDueDatesXML);
-                    }
-                    connection.Close();
-                }
-            }
-            return allDueDatesXML;
-        }
-
-        /// <summary>
-        /// Export the WorkItemStatus table as XML format.
-        /// </summary>
-        /// <param name="dbConnString"></param>
-        /// <param name="workItemIDs"></param>
-        /// <param name="onlyLastStatus">If true, only the last status per WorkItem will be included. If false, all Status changes.</param>
-        /// <returns></returns>
-        private protected XElement GetWorkItemStatusTableAsXML(string dbConnString, bool onlyLastStatus, string workItemIDs = "-1")
-        {
-            /*
-             * <AllStatusChanges>
-                  <StatusChanges WorkItem_ID="1">
-                    <StatusChange WorkItemStatus_ID="1">
-                      <Status_ID>1</Status_ID>
-                      <CompletionAmount>100</CompletionAmount>
-                      <CreationDate>2019-08-03T04:28:04</CreationDate>
-                      <DeletionDate>2019-08-03T04:28:04</DeletionDate>
-                    </StatusChange>
-                    <StatusChange WorkItemStatus_ID="3">
-                      <Status_ID>1</Status_ID>
-                      <CompletionAmount>30</CompletionAmount>
-                      <CreationDate>2019-08-05T08:27:30</CreationDate>
-                    </StatusChange>
-                ...
-                </StatusChanges>
-             </AllStatusChanges>
-             */
-/*
-            // Check to see if the query should be limited by a list of WorkItemIDs.
-            bool isLimited = true;
-            if (workItemIDs.Equals(""))
-                isLimited = false;
-
-            XElement allStatusChangesXML = new XElement("AllStatusChanges");
-            XElement workItemStatusXML = null;
-            using (var connection = new SQLiteConnection(dbConnString))
-            {
-                using (var cmd = new SQLiteCommand(connection))
-                {
-                    connection.Open();
-
-                    cmd.CommandText = "SELECT * FROM ";
-                    if (onlyLastStatus)
-                        cmd.CommandText += "vwExtractWorkItemStatus";
-                    else
-                        cmd.CommandText += "WorkItemStatus";
-
-                    if (isLimited)
-                    {
-                        cmd.CommandText += " WHERE WorkItem_ID IN (@workItemIDs)";
-                        cmd.Parameters.AddWithValue("@workItemIDs", workItemIDs);
-                    }
-                    cmd.CommandText += " ORDER BY WorkItem_ID";
-
-                    if (onlyLastStatus == false)
-                        cmd.CommandText += ", CreationDateTime ASC";
-
-                    int previousWorkItemID = -1;
-                    using (SQLiteDataReader reader = cmd.ExecuteReader())
-                    {
-                        while (reader.Read())
-                        {
-                            int currentWorkItemID = Convert.ToInt32(reader["WorkItem_ID"]);
-
-                            if (currentWorkItemID != previousWorkItemID)
-                            {
-                                previousWorkItemID = currentWorkItemID;
-
-                                if (workItemStatusXML != null)
-                                {
-                                    allStatusChangesXML.Add(workItemStatusXML);
-                                }
-
-                                workItemStatusXML = new XElement("StatusChanges", new XAttribute("WorkItem_ID", currentWorkItemID));
-                            }
-
-                            DateTime? creationDateTime = null;
-                            if (reader["CreationDateTime"] != DBNull.Value)
-                            {
-                                creationDateTime = Convert.ToDateTime(reader["CreationDateTime"].ToString());
-                            }
-                            DateTime? modificationDateTime = null;
-                            if (reader["ModificationDateTime"] != DBNull.Value)
-                            {
-                                modificationDateTime = Convert.ToDateTime(reader["ModificationDateTime"].ToString());
-                            }
-                            DateTime? deletionDateTime = null;
-                            if (reader["DeletionDateTime"] != DBNull.Value)
-                            {
-                                deletionDateTime = Convert.ToDateTime(reader["DeletionDateTime"].ToString());
-                            }
-
-                            XElement workItemStatusChangeXML = new XElement(new XElement("StatusChange", new XAttribute("WorkItemStatus_ID", Convert.ToInt32(reader["WorkItemStatus_ID"]))));
-                            workItemStatusChangeXML.Add(
-                                new XElement("Status_ID", Convert.ToInt32(reader["Status_ID"])),
-                                new XElement("CompletionAmount", Convert.ToInt32(reader["CompletionAmount"])),
-                                new XElement("CreationDate", creationDateTime),
-                                new XElement("ModificationDateTime", modificationDateTime),
-                                new XElement("DeletionDate", deletionDateTime));
-                            workItemStatusXML.Add(workItemStatusChangeXML);
-                        }
-                        // Add last one.
-                        allStatusChangesXML.Add(workItemStatusXML);
-                    }
-                    connection.Close();
-                }
-            }
-            return allStatusChangesXML;
-        }
-
-        /// <summary>
-        /// Export the WorkItem table as XML format.
-        /// </summary>
-        /// <param name="dbConnString"></param>
-        /// <param name="activeOnly">Export only those WorkItems that are of an Open-kind</param>
-        /// <param name="daysStale">If activeOnly=false, export only Open and those WorkItems Closed within x days.</param>
-        /// <param name="includeDeleted"></param>
-        /// <param name="wiIDString">Returns a comma-separated list of WorkItem IDs which match the parameter inputs.</param>
-        /// <returns>
-        /// <paramref name="wiIDString"/>
-        /// </returns>
-        private protected XElement GetWorkItemTableAsXML(out string wiIDString, string dbConnString, bool activeOnly = false, int daysStale = 9999, bool includeDeleted = false)
-        {
-            /*
-             *  <WorkItems>
-             *      <WorkItem WorkItem_ID="1">
-             *      <Title>Application of Sensitivity Requested</Title>
-             *      <Description>This is the description</Description>
-             *      <CreationDate>2019-08-03T04:28:03</CreationDate>
-             *      <DeletionDate />
-             *      </WorkItem>
-             *      ...
-             *      </WorkItems>
-             */
-        /*    wiIDString = "";
-            XElement workItemXML = null;
-            XElement allWorkItemsXML = new XElement("WorkItems");
-            using (var connection = new SQLiteConnection(dbConnString))
-            {
-                using (var cmd = new SQLiteCommand(connection))
-                {
-                    connection.Open();
-                    cmd.CommandText = "SELECT * FROM vwExtractWorkItem WHERE DaysSinceCompletion <= @staleDays";
-                    if (activeOnly)
-                        cmd.CommandText += " AND IsConsideredActive = @activeOnly";
-                    if (includeDeleted == false)
-                        cmd.CommandText += " AND DeletionDateTime IS NULL";
-                    cmd.CommandText += " ORDER BY WorkItem_ID";
-                    cmd.Parameters.AddWithValue("@staleDays", daysStale);
-
-                    using (SQLiteDataReader reader = cmd.ExecuteReader())
-                    {
-                        while (reader.Read())
-                        {
-                            int workItemID = Convert.ToInt32(reader["WorkItem_ID"]);
-                            wiIDString += Convert.ToString(workItemID) + ",";
-
-                            DateTime? deletionDateTime = null;
-                            if (reader["DeletionDateTime"] != DBNull.Value)
-                            {
-                                deletionDateTime = Convert.ToDateTime(reader["DeletionDateTime"].ToString());
-                            }
-                            workItemXML = new XElement("WorkItem", 
-                                new XAttribute("WorkItem_ID", workItemID),
-                                new XAttribute("LastWorkItemStatus_ID", Convert.ToInt32(reader["Status_ID"])),
-                                new XElement("Title", (string)reader["TaskTitle"]),
-                                new XElement("Description", (string)reader["TaskDescription"]),
-                                new XElement("CreationDate", Convert.ToDateTime(reader["CreationDateTime"])), 
-                                new XElement("DeletionDate", deletionDateTime));
-                            allWorkItemsXML.Add(workItemXML);
-                        }
-                    }
-                    connection.Close();
-                }
-            }
-
-            if (wiIDString.Length > 0)
-                wiIDString = wiIDString.Substring(0, wiIDString.Length - 1);
-
-            return allWorkItemsXML;
-        }
-
-        /// <summary>
-        /// Export the user-controllable preferences as XML.
-        /// </summary>
-        /// <param name="dbConnString"></param>
-        /// <returns></returns>
-        private protected XElement GetPreferencesAsXML(string dbConnString)
-        {
-            XElement allPreferences = new XElement("Preferences");
-
-            using (var connection = new SQLiteConnection(dbConnString))
-            {
-                using (var cmd = new SQLiteCommand(connection))
-                {
-                    connection.Open();
-                    cmd.CommandText = "SELECT Name, Value FROM Setting WHERE UserCanEdit = 'Y'";
-
-                    using (SQLiteDataReader reader = cmd.ExecuteReader())
-                    {
-                        while (reader.Read())
-                        {
-                            XElement preferenceXML = new XElement("Preference");
-                            preferenceXML.Add(new XElement("Name", (string)(reader["Name"])));
-                            preferenceXML.Add(new XElement("Value", (string)(reader["Value"])));
-                            allPreferences.Add(preferenceXML);
-                        }
-                    }
-                    connection.Close();
-                }
-            }
-
-            return allPreferences;
-        }
-
-        /// <summary>
-        /// Export the Status table as XML format.
-        /// </summary>
-        /// <param name="dbConnString"></param>
-        /// <returns></returns>
-        private protected XElement GetStatusTableAsXML(string dbConnString)
-        {
-            XElement allStatusesXML = new XElement("Statuses");
-            using (var connection = new SQLiteConnection(dbConnString))
-            {
-                using (var cmd = new SQLiteCommand(connection))
-                {
-                    connection.Open();
-                    cmd.CommandText = "SELECT * FROM Status";
-
-                    using (SQLiteDataReader reader = cmd.ExecuteReader())
-                    {
-                        while (reader.Read())
-                        {
-                            XElement statusXML = new XElement("Status", new XAttribute("Status_ID", Convert.ToInt32(reader["Status_ID"])));
-                                statusXML.Add(new XElement("StatusLabel", (string)(reader["StatusLabel"])),
-                                new XElement("IsConsideredActive", Convert.ToBoolean(reader["IsConsideredActive"])),
-                                new XElement("IsDefault", Convert.ToBoolean(reader["IsDefault"])));
-                            DateTime? deletionDateTime = null;
-                            if (reader["DeletionDateTime"] != DBNull.Value)
-                            {
-                                deletionDateTime = Convert.ToDateTime(reader["DeletionDateTime"].ToString());
-                            }
-                            statusXML.Add(new XElement("DeletionDate", deletionDateTime));
-
-                            allStatusesXML.Add(statusXML);
-                        }
-                    }
-                    connection.Close();
-                }
-            }
-            return allStatusesXML;
-        }*/
 
         /// <summary>
         /// Return WorkItemStatus(es) based on their IsConsideredActive or IsDefault value.
@@ -1164,6 +825,76 @@ namespace MyWorkTracker.Code
             }
 
             UpdateAppPreference(PreferenceName.DATA_EXPORT_LAST_DONE, DateMethods.FormatSQLDate(DateTime.Now.Date));
+        }
+
+        internal void SetCheckListMode(DataEntryMode mode)
+        {
+            _model.CheckListItemMode = mode;
+        }
+
+        /// <summary>
+        /// Move a CheckListItem's SortOrder position.
+        /// </summary>
+        /// <param name="itemToMove"></param>
+        /// <param name="itemToReplace"></param>
+        /// <param name="moveUp"></param>
+        internal void MoveCheckListItem(CheckListItem itemToMove, CheckListItem itemToReplace, bool moveUp)
+        {
+            if (moveUp)
+            {
+                UpdateDBCheckListItem(itemToMove, -10);
+                UpdateDBCheckListItem(itemToReplace, 10);
+            }
+            else
+            {
+                UpdateDBCheckListItem(itemToReplace, -10);
+                UpdateDBCheckListItem(itemToMove, 10);
+            }
+
+            _model.FireCheckListItemMoved(itemToMove, moveUp);
+        }
+
+        /// <summary>
+        /// Update the SortOrder of a CheckListItem.
+        /// </summary>
+        /// <param name="cli"></param>
+        /// <param name="sortOrderChange"></param>
+        internal void UpdateDBCheckListItem(CheckListItem cli, int sortOrderChange)
+        {
+            DateTime modDate = DateTime.Now;
+            using (var connection = new SQLiteConnection(dbConnectionString))
+            {
+                using (var cmd = new SQLiteCommand(connection))
+                {
+                    connection.Open();
+                    string sql = "UPDATE WorkItemCheckList" +
+                        " SET TaskText = @TaskText," +
+                        " TaskDetails = @TaskDetails," +
+                        " DueDateTime = @DueDate," +
+                        " ModificationDateTime = @modDateTime," +
+                        " CompletionDateTime = @compDateTime";
+
+                    if (sortOrderChange != 0)
+                        sql += ", ItemSortOrder = ItemSortOrder + @newPosition ";
+                       
+                    sql += " WHERE WorkItemCheckList_ID = @dbID";
+
+                    cmd.CommandText = sql;
+                    cmd.Parameters.AddWithValue("@TaskText", cli.Task);
+                    cmd.Parameters.AddWithValue("@TaskDetails", cli.Details);
+                    cmd.Parameters.AddWithValue("@DueDate", cli.DueDateTime);
+                    cmd.Parameters.AddWithValue("@modDateTime", modDate);
+                    cmd.Parameters.AddWithValue("@compDateTime", cli.CompletionDateTime);
+                    cmd.Parameters.AddWithValue("@dbID", cli.DatabaseID);
+                    if (sortOrderChange != 0)
+                        cmd.Parameters.AddWithValue("@newPosition", sortOrderChange);
+
+                    cmd.ExecuteNonQuery();
+                }
+                connection.Close();
+            }
+            cli.ModificationDateTime = modDate;
+            _model.WorkItemCheckListDBNeedsUpdating = false;
         }
 
         /// <summary>
