@@ -41,6 +41,11 @@ namespace MyWorkTracker
         {
             get
             {
+                if (_completionDateTime.HasValue)
+                    _isCompleted = true;
+                else
+                    _isCompleted = false;
+                    
                 return _isCompleted;
             }
             set

@@ -79,19 +79,19 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="Code\BaseDBElement.cs" />
+    <Compile Include="Components\Core\BaseDBElement.cs" />
     <Compile Include="Code\BooleanToVisibilityConverter.cs" />
-    <Compile Include="Code\Exporter\DataExportZeroThreeOne.cs" />
-    <Compile Include="Code\Exporter\DataExportZeroThreeZero.cs" />
-    <Compile Include="Code\Importer\DataImportZeroThreeOne.cs" />
-    <Compile Include="Code\Importer\DataImportZeroThreeZero.cs" />
-    <Compile Include="Code\Exporter\IDataExport.cs" />
-    <Compile Include="Code\Importer\IDataImport.cs" />
-    <Compile Include="Code\NotebookTopic.cs" />
-    <Compile Include="Code\Preference.cs" />
-    <Compile Include="Code\Utilities\StringMethods.cs" />
-    <Compile Include="Code\WorkItemStatus.cs" />
-    <Compile Include="Code\WorkItemStatusEntry.cs" />
+    <Compile Include="Components\Core\Exporter\DataExportZeroThreeOne.cs" />
+    <Compile Include="Components\Core\Exporter\DataExportZeroThreeZero.cs" />
+    <Compile Include="Components\Core\Importer\DataImportZeroThreeOne.cs" />
+    <Compile Include="Components\Core\Importer\DataImportZeroThreeZero.cs" />
+    <Compile Include="Components\Core\Exporter\IDataExport.cs" />
+    <Compile Include="Components\Core\Importer\IDataImport.cs" />
+    <Compile Include="Components\Notebook\NotebookTopic.cs" />
+    <Compile Include="Components\Core\Preference.cs" />
+    <Compile Include="Components\Core\Utilities\StringMethods.cs" />
+    <Compile Include="Components\WorkItems\WorkItemStatus.cs" />
+    <Compile Include="Components\WorkItems\WorkItemStatusEntry.cs" />
     <Compile Include="ExportWindow.xaml.cs">
       <DependentUpon>ExportWindow.xaml</DependentUpon>
     </Compile>
@@ -101,8 +101,8 @@
     <Compile Include="PreferenceDialog.xaml.cs">
       <DependentUpon>PreferenceDialog.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Code\WorkItemImportListEntry.cs" />
-    <Compile Include="Code\CheckListItem.cs" />
+    <Compile Include="Components\Core\Importer\WorkItemImportListEntry.cs" />
+    <Compile Include="Components\WorkItems\CheckList\CheckListItem.cs" />
     <Page Include="DueDateDialog.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -127,16 +127,16 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Code\AppAction.cs" />
-    <Compile Include="Code\AppEventArgs.cs" />
+    <Compile Include="Components\Core\AppAction.cs" />
+    <Compile Include="Components\Core\AppEventArgs.cs" />
     <Compile Include="Code\DataEntryMode.cs" />
-    <Compile Include="Code\Utilities\DateMethods.cs" />
-    <Compile Include="Code\JournalEntry.cs" />
+    <Compile Include="Components\Core\Utilities\DateMethods.cs" />
+    <Compile Include="Components\WorkItems\JournalEntry.cs" />
     <Compile Include="Code\MWTController.cs" />
     <Compile Include="Code\MWTModel.cs" />
-    <Compile Include="Code\PreferenceName.cs" />
-    <Compile Include="Code\WorkItem.cs" />
-    <Compile Include="Code\WorkItemDBMeta.cs" />
+    <Compile Include="Components\Core\PreferenceName.cs" />
+    <Compile Include="Components\WorkItems\WorkItem.cs" />
+    <Compile Include="Components\WorkItems\WorkItemDBMeta.cs" />
     <Compile Include="DueDateDialog.xaml.cs">
       <DependentUpon>DueDateDialog.xaml</DependentUpon>
     </Compile>
